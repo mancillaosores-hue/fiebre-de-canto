@@ -56,7 +56,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <div class="grid">
 <div class="card current"><span class="badge">PARTICIPANTE ACTUAL</span><div class="avatar" id="avatar">🎤</div><h1 id="currentName">—</h1><div class="song" id="currentSong">Esperando al administrador…</div><div class="timer"><div>Tiempo para votar</div><strong id="timer">--:--</strong></div><div class="notice">ℹ️ Solo puedes votar UNA VEZ por participante (con tu nombre).</div></div>
 <div class="card"><h2>🎙️ TU VOTACIÓN</h2>
-<div class="namebox"><input id="voterName" placeholder="Tu nombre o apodo" maxlength="40"></div>
+<div class="namebox"><input id="voterName" placeholder="Tu nombre o apodo" maxlength="40"><button class="primary blue" id="editNameBtn" style="display:none" onclick="editName()">✎</button></div>
 <div class="sub">Desliza o escribe el puntaje (1 a 10) en cada categoría</div>
 <div id="ratings" class="rating"></div>
 <div class="total">TOTAL <small>(de 50 puntos)</small><br><b id="total">0</b></div>
@@ -134,9 +134,10 @@ async function loadAll(){
 }
 
 function currentParticipant(){return state.participants.find(p=>p.id===state.settings.current_participant_id)}
+function miniAvatar(p){return p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji}
 function votesFor(id){return state.votes.filter(v=>v.participant_id===id)}
 function sumFor(id){return votesFor(id).reduce((a,v)=>a+Number(v.total),0)}
-function hasVoted(id,name){const key=(name||'').trim().toLowerCase();return votesFor(id).some(v=>v.voter_name_key===key)}
+function hasVoted(id,name){const key=(name||'').trim().toLowerCase();const dev=deviceId();return votesFor(id).some(v=>v.voter_name_key===key||v.device_id===dev)}
 
 function renderAll(){
   document.getElementById('eventName').textContent=state.settings.event_name||'La familia está votando';
@@ -155,7 +156,7 @@ function renderCurrent(){
   const p=currentParticipant();
   if(p && p.id!==lastLiveId){ratings=[null,null,null,null,null];touched=[false,false,false,false,false]}
   lastLiveId=p?p.id:lastLiveId;
-  document.getElementById('avatar').textContent=p?p.emoji:'🎤';
+  document.getElementById('avatar').innerHTML=p?(p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji):'🎤';
   document.getElementById('currentName').textContent=p?p.name:'—';
   document.getElementById('currentSong').textContent=p?('🎵 '+p.song):'Esperando al administrador…';
   const btn=document.getElementById('submitBtn');
@@ -191,6 +192,7 @@ async function submitVote(){
   if(!name) return toast('Escribe tu nombre o apodo',true);
   if(!allTouched()) return toast('⚠️ Debes calificar las 5 categorías',true);
   localStorage.setItem('fc_voter_name',name);
+  lockName();
   if(hasVoted(p.id,name)) return toast('⚠️ Ya votaste por este participante',true);
   const {error}=await sb.from('votes').insert({
     participant_id:p.id, voter_name:name, device_id:deviceId(), scores:ratings
@@ -206,16 +208,18 @@ async function submitVote(){
   await loadAll();
 }
 function deviceId(){let id=localStorage.getItem('fc_device');if(!id){id='D'+Math.random().toString(36).slice(2);localStorage.setItem('fc_device',id)}return id}
+function lockName(){document.getElementById('voterName').readOnly=true;document.getElementById('editNameBtn').style.display='inline-block'}
+function editName(){document.getElementById('voterName').readOnly=false;document.getElementById('voterName').focus()}
 
 function renderRanking(){
   const list=[...state.participants].sort((a,b)=>sumFor(b.id)-sumFor(a.id));
-  const rowHtml=(p,i,big)=>`<div class="rank ${i===0?'first':''}"><div class="place">${big?(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1):i+1}</div><div class="mini">${p.emoji}</div><div class="rname"><b>${p.name}</b><div class="sub">${votesFor(p.id).length} votos</div></div><div class="points">${sumFor(p.id).toFixed(0)} pts</div></div>`;
+  const rowHtml=(p,i,big)=>`<div class="rank ${i===0?'first':''}"><div class="place">${big?(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1):i+1}</div><div class="mini">${miniAvatar(p)}</div><div class="rname"><b>${p.name}</b><div class="sub">${votesFor(p.id).length} votos</div></div><div class="points">${sumFor(p.id).toFixed(0)} pts</div></div>`;
   document.getElementById('ranking').innerHTML=list.map((p,i)=>rowHtml(p,i,false)).join('')||'<div class="notice">Aún no hay participantes.</div>';
   document.getElementById('bigRanking').innerHTML=list.map((p,i)=>rowHtml(p,i,true)).join('')||'<div class="notice">Aún no hay participantes.</div>';
 }
 
 function renderPeople(){
-  document.getElementById('peopleList').innerHTML=state.participants.map((p,i)=>`<div class="rank"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${p.emoji}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div></div>`).join('')||'<div class="notice">Aún no hay participantes.</div>';
+  document.getElementById('peopleList').innerHTML=state.participants.map((p,i)=>`<div class="rank"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${miniAvatar(p)}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div></div>`).join('')||'<div class="notice">Aún no hay participantes.</div>';
 }
 
 function renderLiveVoterList(){
@@ -278,7 +282,7 @@ async function rpc(fn,args){
 function renderAdminList(){
   document.getElementById('adminList').innerHTML=state.participants.map((p,i)=>{
     const isLive=state.settings.current_participant_id===p.id;
-    return `<div class="adminrow"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${p.emoji}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div>
+    return `<div class="adminrow"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${miniAvatar(p)}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div>
     <div class="actions">
       <button class="live-btn ${isLive?'on':''}" onclick="setLive(${p.id})">${isLive?'EN VIVO':'Poner en vivo'}</button>
       <button class="edit" onclick="editPerson(${p.id})">✎</button>
@@ -290,13 +294,15 @@ function renderAdminList(){
 async function addPerson(){
   const name=prompt('Nombre del participante:'); if(!name)return;
   const song=prompt('Canción:')||'Canción pendiente';
-  try{ await rpc('admin_add_participant',{p_name:name,p_song:song,p_emoji:'🎤'}); await loadAll(); toast('✅ Participante agregado');}catch(e){}
+  const photo=prompt('Link de la foto (opcional, déjalo vacío si no tienes aún):')||null;
+  try{ await rpc('admin_add_participant',{p_name:name,p_song:song,p_emoji:'🎤',p_photo_url:photo}); await loadAll(); toast('✅ Participante agregado');}catch(e){}
 }
 async function editPerson(id){
   const p=state.participants.find(x=>x.id===id);
   const name=prompt('Nombre:',p.name); if(name===null)return;
   const song=prompt('Canción:',p.song)||p.song;
-  try{ await rpc('admin_edit_participant',{p_id:id,p_name:name,p_song:song,p_emoji:p.emoji}); await loadAll(); toast('✅ Guardado');}catch(e){}
+  const photo=prompt('Link de la foto (opcional):',p.photo_url||'')||null;
+  try{ await rpc('admin_edit_participant',{p_id:id,p_name:name,p_song:song,p_emoji:p.emoji,p_photo_url:photo}); await loadAll(); toast('✅ Guardado');}catch(e){}
 }
 async function deletePerson(id){
   if(!confirm('¿Eliminar participante y sus votos?'))return;
@@ -331,7 +337,9 @@ sb.channel('fiebre-de-canto')
  .subscribe();
 
 async function init(){
-  document.getElementById('voterName').value=localStorage.getItem('fc_voter_name')||'';
+  const savedName=localStorage.getItem('fc_voter_name')||'';
+  document.getElementById('voterName').value=savedName;
+  if(savedName) lockName();
   await loadAll();
   if(adminPin){
     const {error}=await sb.rpc('check_admin_pin',{p_pin:adminPin});
@@ -383,7 +391,7 @@ init();
    document.getElementById('dpodium').innerHTML=list.slice(0,5).map((x,i)=>`
     <div class="drow ${i===0?'dfirst':''}">
       <div class="dplace">${['🥇','🥈','🥉','4','5'][i]}</div>
-      <div class="davatar">${x.emoji}</div>
+      <div class="davatar">${x.photo_url?`<img src="${x.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:x.emoji}</div>
       <div class="dperson"><b>${x.name}</b><small>${x.song}</small></div>
       <div class="dpoints">${sumFor(x.id).toFixed(0)}<small> pts</small></div>
     </div>`).join('');
