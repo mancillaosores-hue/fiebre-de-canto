@@ -454,7 +454,6 @@ init();
       <div class="live-score" id="dscore">0<small> pts en vivo</small></div>
       <div class="vote-status" id="dstatus">--</div>
    </div>
-   <div class="podium" id="dpodium"></div>
    <div class="display-footer">❤️ Gracias por participar · Los resultados se actualizan automáticamente</div>
  </div>
  <div id="reactLayer" class="react-layer"></div>
@@ -472,7 +471,7 @@ init();
  const SUPABASE_URL='https://xhvqudltvtfsdnycigjp.supabase.co';
  const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
  const dsb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
- let lastLeaderId=null, firstRun=true, winnerShown=false;
+ let lastLeaderId=null, firstRun=true, winnerShown=false, lastVotingState=null;
 
  function spawnReaction(emoji){
    const el=document.createElement('div');
@@ -493,19 +492,10 @@ init();
    if(!parts) return;
    const sumFor=id=>(votes||[]).filter(v=>v.participant_id===id).reduce((a,v)=>a+Number(v.total),0);
    const list=[...parts].sort((a,b)=>sumFor(b.id)-sumFor(a.id));
-   document.getElementById('dpodium').innerHTML=list.slice(0,5).map((x,i)=>`
-    <div class="drow ${i===0?'dfirst':''}">
-      <div class="dplace">${['🥇','🥈','🥉','4','5'][i]}</div>
-      <div class="davatar">${x.photo_url?`<img src="${x.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:x.emoji}</div>
-      <div class="dperson"><b>${x.name}</b><small>${x.song}</small></div>
-      <div class="dpoints">${sumFor(x.id).toFixed(0)}<small> pts</small></div>
-    </div>`).join('');
 
    if(list.length && list[0] && sumFor(list[0].id)>0){
      if(!firstRun && lastLeaderId!==null && list[0].id!==lastLeaderId){
        playApplause();
-       const row=document.querySelector('.drow.dfirst');
-       if(row){row.style.animation='none';void row.offsetWidth;row.style.animation='leaderFlash 1s ease'}
        if(window.confetti) confetti({particleCount:70,spread:100,origin:{y:0.3}});
      }
      lastLeaderId=list[0].id;
@@ -522,6 +512,15 @@ init();
    scoreEl.dataset.prev=String(liveScore);
    scoreEl.innerHTML=liveScore.toFixed(0)+'<small> pts en vivo</small>';
    const open=!!(cp && sett?.voting_open);
+   const stateKey=cp?cp.id+':'+open:null;
+   if(cp && lastVotingState!==null && lastVotingState===cp.id+':true' && !open){
+     playSuccess();
+     if(window.confetti){
+       confetti({particleCount:130,spread:120,origin:{y:0.4}});
+       setTimeout(()=>confetti({particleCount:90,spread:140,origin:{y:0.5}}),300);
+     }
+   }
+   lastVotingState=stateKey;
    const statusEl=document.getElementById('dstatus');
    statusEl.textContent = !cp ? '' : (open?'🗳️ ¡VOTEN AHORA!':'🔒 VOTACIÓN CERRADA');
    statusEl.style.background = !cp ? 'transparent' : (open?'#16b954':'#7a1f1f');
