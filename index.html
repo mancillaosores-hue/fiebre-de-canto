@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fiebre de Canto Familiar</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <style>
 :root{--bg:#07091c;--panel:#11152f;--panel2:#171b3b;--purple:#7c22d6;--pink:#ff3fa4;--cyan:#22d9ff;--gold:#ffc42e;--green:#20df67;--text:#f6f5ff;--muted:#a7aac8;--danger:#ff4545}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:radial-gradient(circle at 70% 10%,#24104d 0,#07091c 42%,#040510 100%);color:var(--text);min-height:100vh}
@@ -14,6 +15,15 @@ button,input{font:inherit}.app{display:grid;grid-template-columns:250px 1fr;min-
 nav{margin-top:25px;display:grid;gap:9px}nav button{border:0;background:transparent;color:#ddd;text-align:left;padding:14px 16px;border-radius:10px;cursor:pointer}nav button.active,nav button:hover{background:linear-gradient(90deg,#6419b5,#8c31df);color:#fff}
 .sidefoot{position:absolute;bottom:20px;color:#888da9;font-size:12px;text-align:center;width:calc(100% - 30px)}
 main{padding:10px;max-width:1500px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;gap:10px;background:#0d1029cc;border-radius:10px;padding:14px 22px;margin-bottom:10px;border:1px solid #24294c;flex-wrap:wrap}.live{font-size:18px;font-weight:800}.live i{display:inline-block;width:10px;height:10px;background:#ff3030;border-radius:50%;margin-left:8px}.sub{font-size:13px;color:var(--muted);margin-top:3px}.stats{display:flex;gap:10px}.stat{min-width:150px;border:1px solid #343858;border-radius:12px;padding:9px 18px;background:#11152e}.stat b{font-size:20px;display:block}.grid{display:grid;grid-template-columns:1fr 1.08fr;gap:10px}.card{background:linear-gradient(145deg,#11152f,#0d1028);border:1px solid #24294d;border-radius:10px;padding:18px;box-shadow:0 10px 30px #0003}.current{text-align:center;background:radial-gradient(circle at 50% 35%,#351170 0,#11152f 42%,#0b0e24 100%)}.badge{display:inline-block;background:#7821c8;padding:8px 20px;border-radius:8px;font-weight:800}.avatar{width:150px;height:150px;border-radius:50%;margin:15px auto;border:4px solid #a82aff;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#201b53,#50227e);font-size:60px;box-shadow:0 0 30px #922cff88}.current h1{margin:8px 0 3px}.song{color:#c8c7dc}.votestatus{margin:15px auto;font-size:22px;font-weight:900}
+.reactbar{display:flex;justify-content:center;gap:12px;margin-top:14px}
+.reactbar button{width:52px;height:52px;border-radius:50%;border:2px solid #3b3f60;background:#151934;font-size:24px;cursor:pointer;transition:transform .15s}
+.reactbar button:active{transform:scale(1.3)}
+.thanks-overlay{position:fixed;inset:0;background:#050614ee;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.thanks-overlay.hidden{display:none}
+.thanks-card{text-align:center}
+.thanks-photo{width:130px;height:130px;border-radius:50%;margin:0 auto 18px;border:4px solid #20df67;display:flex;align-items:center;justify-content:center;font-size:56px;background:linear-gradient(135deg,#201b53,#50227e);overflow:hidden;box-shadow:0 0 30px #20df6788}
+.thanks-title{font-size:28px;font-weight:900;color:#20df67;margin-bottom:8px}
+.thanks-text{font-size:16px;color:#d7d9ee;max-width:320px;margin:0 auto}
 .primary{border:0;border-radius:30px;background:linear-gradient(90deg,#8b20dc,#b52cda);color:#fff;padding:13px 28px;font-weight:900;cursor:pointer}.primary:disabled{opacity:.45;cursor:default}.blue{background:#08749b}.green{background:linear-gradient(90deg,#10bb51,#24e768)}
 .namebox{display:flex;gap:8px;margin-bottom:14px}.namebox input{flex:1;background:#0b0f25;border:1px solid #3b3f60;color:#fff;padding:11px;border-radius:8px}
 .rating{display:grid;gap:12px;margin-top:8px}.row{display:grid;grid-template-columns:1fr 46px;align-items:center;gap:10px;padding:12px;border:1px solid #3b3f60;border-radius:10px;background:#151934}
@@ -54,7 +64,13 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 
 <section id="live" class="page">
 <div class="grid">
-<div class="card current"><span class="badge">PARTICIPANTE ACTUAL</span><div class="avatar" id="avatar">🎤</div><h1 id="currentName">—</h1><div class="song" id="currentSong">Esperando al administrador…</div><div class="votestatus" id="voteStatus">—</div><div id="adminVoteControls" class="hidden" style="margin-top:12px"><button class="primary" style="background:#20b957" onclick="closeVoting()">🔒 CERRAR VOTACIÓN</button><button class="primary blue" onclick="reopenVoting()">🔓 REABRIR VOTACIÓN</button></div><div class="notice">ℹ️ Solo puedes votar UNA VEZ por participante (con tu nombre).</div></div>
+<div class="card current"><span class="badge">PARTICIPANTE ACTUAL</span><div class="avatar" id="avatar">🎤</div><h1 id="currentName">—</h1><div class="song" id="currentSong">Esperando al administrador…</div><div class="votestatus" id="voteStatus">—</div><div id="adminVoteControls" class="hidden" style="margin-top:12px"><button class="primary" style="background:#20b957" onclick="closeVoting()">🔒 CERRAR VOTACIÓN</button><button class="primary blue" onclick="reopenVoting()">🔓 REABRIR VOTACIÓN</button></div><div class="notice">ℹ️ Solo puedes votar UNA VEZ por participante (con tu nombre).</div>
+<div class="reactbar" id="reactbar">
+<button onclick="sendReaction('❤️')">❤️</button>
+<button onclick="sendReaction('🔥')">🔥</button>
+<button onclick="sendReaction('👏')">👏</button>
+<button onclick="sendReaction('😂')">😂</button>
+</div></div>
 <div class="card"><h2>🎙️ TU VOTACIÓN</h2>
 <div class="namebox"><input id="voterName" placeholder="Tu nombre o apodo" maxlength="40"><button class="primary blue" id="editNameBtn" style="display:none" onclick="editName()">✎</button></div>
 <div class="sub">Desliza o escribe el puntaje (1 a 10) en cada categoría</div>
@@ -92,6 +108,8 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <input id="secondsInput" type="number" min="15" placeholder="Segundos de votación">
 <button class="primary" onclick="saveSettings()">GUARDAR CONFIGURACIÓN</button>
 <button class="primary" style="background:#33395c" onclick="resetVotes()">↻ BORRAR TODOS LOS VOTOS</button>
+<button class="primary" style="background:#ffc42e;color:#241800" onclick="revealWinner()">🏆 REVELAR GANADOR (pantalla TV)</button>
+<button class="primary" style="background:#33395c" onclick="hideWinner()">✖ Ocultar ganador</button>
 <hr style="border-color:#333756;width:100%">
 <input id="newPin1" placeholder="Nuevo PIN">
 <button class="primary" style="background:#33395c" onclick="changePin()">CAMBIAR PIN</button>
@@ -105,11 +123,27 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 
 <div class="footer">🎵 ¡Que gane el mejor! 🎤 <span>Fiebre de Canto Familiar ❤️</span></div>
 </main></div><div id="toast" class="toast"></div>
+<div id="thanksOverlay" class="thanks-overlay hidden" onclick="this.classList.add('hidden')">
+  <div class="thanks-card">
+    <div class="thanks-photo" id="thanksPhoto">🎤</div>
+    <div class="thanks-title">¡GRACIAS POR VOTAR! 🎉</div>
+    <div id="thanksText" class="thanks-text"></div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL='https://xhvqudltvtfsdnycigjp.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+// ---- Sonido y vibración (sin archivos externos) ----
+let _actx=null;
+function actx(){if(!_actx)_actx=new (window.AudioContext||window.webkitAudioContext)();return _actx}
+function beep(freq,dur,delay,vol){const c=actx();const o=c.createOscillator();const g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.value=freq;g.gain.value=(vol||0.08);const t=c.currentTime+(delay||0);o.start(t);g.gain.exponentialRampToValueAtTime(0.001,t+dur/1000);o.stop(t+dur/1000+0.02)}
+function playClick(){try{beep(700,60,0,0.06)}catch(e){}}
+function playSuccess(){try{beep(523,110,0);beep(659,110,0.09);beep(784,160,0.18)}catch(e){}}
+function playApplause(){try{const c=actx();for(let i=0;i<26;i++){const t=Math.random()*0.6;const buf=c.createBuffer(1,c.sampleRate*0.05,c.sampleRate);const d=buf.getChannelData(0);for(let j=0;j<d.length;j++)d[j]=(Math.random()*2-1)*(1-j/d.length);const src=c.createBufferSource();src.buffer=buf;const g=c.createGain();g.gain.value=0.05+Math.random()*0.05;src.connect(g);g.connect(c.destination);src.start(c.currentTime+t)}}catch(e){}}
+function vib(pattern){try{navigator.vibrate&&navigator.vibrate(pattern)}catch(e){}}
 const cats=[['🎵','Voz'],['❤️','Interpretación'],['⚡','Desplante'],['💃','Show'],['😊','Entretenimiento']];
 
 let state={participants:[],settings:{},votes:[]};
@@ -163,6 +197,7 @@ function renderCurrent(){
   statusEl.textContent = !p ? '' : (open?'🟢 VOTACIÓN ABIERTA':'🔴 VOTACIÓN CERRADA');
   statusEl.style.color = open?'#20df67':'#ff4545';
   document.getElementById('submitBtn').disabled=!open;
+  document.getElementById('reactbar').style.display=p?'flex':'none';
   if(isAdmin){
     document.getElementById('adminVoteControls').classList.toggle('hidden',!p);
     document.querySelector('#adminVoteControls button:nth-child(1)').style.display=open?'inline-block':'none';
@@ -187,7 +222,7 @@ function renderRatings(){
   document.getElementById('total').textContent = done<5 ? `Faltan ${5-done}/5` : ratings.reduce((a,b)=>a+Number(b),0);
   document.getElementById('submitBtn').disabled = !currentParticipant() || !state.settings.voting_open || !allTouched();
 }
-function rate(i,v){v=Math.max(1,Math.min(10,Math.round(Number(v)||1)));ratings[i]=v;touched[i]=true;renderRatings()}
+function rate(i,v){v=Math.max(1,Math.min(10,Math.round(Number(v)||1)));ratings[i]=v;touched[i]=true;playClick();vib(15);renderRatings()}
 
 async function submitVote(){
   const p=currentParticipant();
@@ -208,9 +243,26 @@ async function submitVote(){
     return;
   }
   toast('✅ ¡Voto registrado!');
+  playSuccess(); vib([30,40,30,40,80]);
+  if(window.confetti) confetti({particleCount:120,spread:80,origin:{y:0.6}});
+  showThanks(p,name);
   ratings=[null,null,null,null,null];
   touched=[false,false,false,false,false];
   await loadAll();
+}
+function showThanks(p,name){
+  const o=document.getElementById('thanksOverlay');
+  document.getElementById('thanksPhoto').innerHTML=p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji;
+  document.getElementById('thanksText').textContent=`Gracias ${name}, tu voto para ${p.name} quedó registrado 🎉`;
+  o.classList.remove('hidden');
+  clearTimeout(window._thanksTimer);
+  window._thanksTimer=setTimeout(()=>o.classList.add('hidden'),2600);
+}
+async function sendReaction(emoji){
+  const p=currentParticipant();
+  if(!p) return;
+  vib(20);
+  sb.from('reactions').insert({participant_id:p.id,emoji}).then(()=>{});
 }
 function deviceId(){let id=localStorage.getItem('fc_device');if(!id){id='D'+Math.random().toString(36).slice(2);localStorage.setItem('fc_device',id)}return id}
 function lockName(){document.getElementById('voterName').readOnly=true;document.getElementById('editNameBtn').style.display='inline-block'}
@@ -331,6 +383,12 @@ async function resetVotes(){
   if(!confirm('¿Borrar TODOS los votos? Esta acción no se puede deshacer.'))return;
   try{ await rpc('admin_reset_votes',{}); await loadAll(); toast('↻ Votos reiniciados');}catch(e){}
 }
+async function revealWinner(){
+  try{ await rpc('admin_reveal_winner',{}); toast('🏆 Ganador revelado en la pantalla TV');}catch(e){}
+}
+async function hideWinner(){
+  try{ await rpc('admin_hide_winner',{}); toast('Ganador oculto');}catch(e){}
+}
 async function changePin(){
   const np=document.getElementById('newPin1').value.trim();
   if(!np) return;
@@ -368,6 +426,10 @@ init();
    <div class="display-head">
      <div><div class="display-title">🎤 FIEBRE DE CANTO <span>FAMILIAR</span></div>
      <div class="display-sub">RESULTADOS EN VIVO</div></div>
+     <div style="text-align:center">
+       <img id="dqr" style="width:90px;height:90px;border-radius:8px;background:#fff;padding:4px" />
+       <div style="font-size:13px;color:#c9caea;margin-top:4px">Escanea para votar</div>
+     </div>
      <div class="display-clock" id="dclock">--:--</div>
    </div>
    <div class="current-display">
@@ -380,12 +442,33 @@ init();
    </div>
    <div class="podium" id="dpodium"></div>
    <div class="display-footer">❤️ Gracias por participar · Los resultados se actualizan automáticamente</div>
+ </div>
+ <div id="reactLayer" class="react-layer"></div>
+ <div id="winnerOverlay" class="winner-overlay hidden">
+   <div class="winner-label">🏆 GANADOR/A 🏆</div>
+   <div class="winner-photo" id="winnerPhoto">🎤</div>
+   <div class="winner-name" id="winnerName">--</div>
+   <div class="winner-points" id="winnerPoints">0 pts</div>
  </div>`;
  document.body.classList.add('big-mode');
+
+ const baseUrl=location.origin+location.pathname;
+ document.getElementById('dqr').src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(baseUrl);
 
  const SUPABASE_URL='https://xhvqudltvtfsdnycigjp.supabase.co';
  const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
  const dsb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+ let lastLeaderId=null, firstRun=true, winnerShown=false;
+
+ function spawnReaction(emoji){
+   const el=document.createElement('div');
+   el.className='floatie';
+   el.textContent=emoji;
+   el.style.left=(10+Math.random()*80)+'%';
+   el.style.fontSize=(28+Math.random()*30)+'px';
+   document.getElementById('reactLayer').appendChild(el);
+   setTimeout(()=>el.remove(),3200);
+ }
 
  async function refresh(){
    const [{data:parts},{data:sett},{data:votes}]=await Promise.all([
@@ -403,6 +486,18 @@ init();
       <div class="dperson"><b>${x.name}</b><small>${x.song}</small></div>
       <div class="dpoints">${sumFor(x.id).toFixed(0)}<small> pts</small></div>
     </div>`).join('');
+
+   if(list.length && list[0] && sumFor(list[0].id)>0){
+     if(!firstRun && lastLeaderId!==null && list[0].id!==lastLeaderId){
+       playApplause();
+       const row=document.querySelector('.drow.dfirst');
+       if(row){row.style.animation='none';void row.offsetWidth;row.style.animation='leaderFlash 1s ease'}
+       if(window.confetti) confetti({particleCount:70,spread:100,origin:{y:0.3}});
+     }
+     lastLeaderId=list[0].id;
+   }
+   firstRun=false;
+
    const cp=parts.find(p=>p.id===sett?.current_participant_id);
    document.getElementById('dname').textContent=cp?cp.name:'--';
    document.getElementById('dsong').textContent=cp?('🎵 '+cp.song):'--';
@@ -418,9 +513,26 @@ init();
    statusEl.style.background = !cp ? 'transparent' : (open?'#16b954':'#7a1f1f');
    statusEl.style.color = '#fff';
    document.getElementById('dclock').textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+
+   const winEl=document.getElementById('winnerOverlay');
+   if(sett?.show_winner && list.length){
+     const w=list[0];
+     document.getElementById('winnerPhoto').innerHTML=w.photo_url?`<img src="${w.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:w.emoji;
+     document.getElementById('winnerName').textContent=w.name;
+     document.getElementById('winnerPoints').textContent=sumFor(w.id).toFixed(0)+' pts';
+     winEl.classList.remove('hidden');
+     if(!winnerShown){
+       winnerShown=true; playApplause();
+       if(window.confetti){
+         const burst=()=>confetti({particleCount:150,spread:160,origin:{y:0.4}});
+         burst(); setTimeout(burst,500); setTimeout(burst,1000);
+       }
+     }
+   } else { winEl.classList.add('hidden'); winnerShown=false; }
  }
  refresh(); setInterval(refresh,1500);
  dsb.channel('fiebre-display')
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'reactions'},payload=>spawnReaction(payload.new.emoji))
    .on('postgres_changes',{event:'*',schema:'public',table:'votes'},refresh)
    .on('postgres_changes',{event:'*',schema:'public',table:'settings'},refresh)
    .on('postgres_changes',{event:'*',schema:'public',table:'participants'},refresh)
@@ -437,5 +549,15 @@ init();
 .live-score{font-size:clamp(40px,7vw,90px);font-weight:1000;color:#20df67;text-shadow:0 0 20px #20df6788;transition:transform .2s ease;display:inline-block}
 .live-score small{font-size:clamp(14px,1.6vw,22px);color:#bfc2df;font-weight:700}.vote-status{display:inline-block;background:#16b954;border-radius:40px;padding:12px 30px;font-size:clamp(20px,3vw,35px);font-weight:1000}
 .podium{max-width:1000px;margin:10px auto}.drow{display:flex;align-items:center;gap:20px;padding:14px 20px;margin:8px 0;border:1px solid #363a60;border-radius:16px;background:#151934}.dfirst{border-color:#ffc321;background:#2b2416;box-shadow:0 0 25px #ffbd2433}.dplace{font-size:clamp(25px,3vw,45px);width:55px;text-align:center}.davatar{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#45206d;font-size:32px}.dperson{flex:1;font-size:clamp(20px,2.5vw,32px)}.dperson small{display:block;font-size:15px;color:#aaaec9;margin-top:4px}.dpoints{font-size:clamp(28px,4vw,48px);font-weight:1000;color:#cfa7ff}.dpoints small{font-size:15px}.display-footer{text-align:center;margin-top:25px;color:#9296b4;font-size:17px}
+.react-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:150}
+.floatie{position:absolute;bottom:-40px;animation:floatUp 3.2s ease-in forwards}
+@keyframes floatUp{0%{transform:translateY(0) translateX(0) rotate(0deg);opacity:1}80%{opacity:1}100%{transform:translateY(-100vh) translateX(20px) rotate(20deg);opacity:0}}
+@keyframes leaderFlash{0%{box-shadow:0 0 0px #ffc32100}30%{box-shadow:0 0 60px #ffc321cc}100%{box-shadow:0 0 25px #ffbd2433}}
+.winner-overlay{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#4a1690,#08091c 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:180;text-align:center}
+.winner-overlay.hidden{display:none}
+.winner-label{font-size:clamp(24px,4vw,44px);color:#ffc321;font-weight:1000;letter-spacing:2px;margin-bottom:10px}
+.winner-photo{width:clamp(160px,22vw,280px);height:clamp(160px,22vw,280px);border-radius:50%;border:6px solid #ffc321;box-shadow:0 0 60px #ffc32188;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:110px;background:linear-gradient(135deg,#201b53,#50227e)}
+.winner-name{font-size:clamp(40px,7vw,100px);font-weight:1000;margin-top:20px;text-shadow:0 0 20px #a82aff}
+.winner-points{font-size:clamp(24px,4vw,44px);color:#20df67;font-weight:900;margin-top:8px}
 </style>
 </body></html>
