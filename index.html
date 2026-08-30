@@ -24,7 +24,7 @@ main{padding:10px;max-width:1500px;width:100%;margin:auto}.top{display:flex;just
 .thanks-overlay{position:fixed;inset:0;background:#050614ee;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
 .thanks-overlay.hidden{display:none}
 .thanks-card{text-align:center}
-.thanks-photo{width:130px;height:130px;border-radius:50%;margin:0 auto 18px;border:4px solid #20df67;display:flex;align-items:center;justify-content:center;font-size:56px;background:linear-gradient(135deg,#201b53,#50227e);overflow:hidden;box-shadow:0 0 30px #20df6788}
+.thanks-photo{position:relative;width:130px;height:130px;border-radius:50%;margin:0 auto 18px;border:4px solid #20df67;display:flex;align-items:center;justify-content:center;font-size:56px;background:linear-gradient(135deg,#201b53,#50227e);overflow:visible;box-shadow:0 0 30px #20df6788}
 .thanks-title{font-size:28px;font-weight:900;color:#20df67;margin-bottom:8px}
 .thanks-text{font-size:16px;color:#d7d9ee;max-width:320px;margin:0 auto}
 .primary{border:0;border-radius:30px;background:linear-gradient(90deg,#8b20dc,#b52cda);color:#fff;padding:13px 28px;font-weight:900;cursor:pointer}.primary:disabled{opacity:.45;cursor:default}.blue{background:#08749b}.green{background:linear-gradient(90deg,#10bb51,#24e768)}
@@ -61,6 +61,12 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 .primary:active{transform:scale(.96)}
 .numbtn.on{animation:glowPulse 1.4s ease-in-out infinite}
 .votestatus{padding:8px 18px;border-radius:30px;display:inline-block}
+.current{--pcolor:#a82aff;border-color:var(--pcolor)}
+.current .avatar{border-color:var(--pcolor);box-shadow:0 0 30px var(--pcolor)}
+.current .avatar::before{background:conic-gradient(from 0deg,var(--pcolor),#0000,var(--pcolor))}
+.numchip{position:absolute;top:-6px;left:-6px;background:var(--pcolor);color:#0a0a1a;font-weight:900;font-size:14px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #0d1029;z-index:2}
+@keyframes popIn{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+.checkbadge{position:absolute;bottom:2px;right:2px;background:#20df67;color:#052;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;border:3px solid #0a0a1a;animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both}
 </style>
 </head>
 <body>
@@ -81,7 +87,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 
 <section id="live" class="page">
 <div class="grid">
-<div class="card current"><span class="badge">PARTICIPANTE ACTUAL</span><div class="avatar" id="avatar">🎤</div><h1 id="currentName">—</h1><div class="song" id="currentSong">Esperando al administrador…</div><div class="votestatus" id="voteStatus">—</div><div id="adminVoteControls" class="hidden" style="margin-top:12px"><button class="primary" style="background:#20b957" onclick="closeVoting()">🔒 CERRAR VOTACIÓN</button><button class="primary blue" onclick="reopenVoting()">🔓 REABRIR VOTACIÓN</button></div><div class="notice">ℹ️ Solo puedes votar UNA VEZ por participante (con tu nombre).</div>
+<div class="card current" id="currentCard"><span class="badge">PARTICIPANTE ACTUAL</span><div class="avatar" id="avatar">🎤</div><h1 id="currentName">—</h1><div class="song" id="currentSong">Esperando al administrador…</div><div class="votestatus" id="voteStatus">—</div><div id="adminVoteControls" class="hidden" style="margin-top:12px"><button class="primary" style="background:#20b957" onclick="closeVoting()">🔒 CERRAR VOTACIÓN</button><button class="primary blue" onclick="reopenVoting()">🔓 REABRIR VOTACIÓN</button></div><div class="notice">ℹ️ Solo puedes votar UNA VEZ por participante (con tu nombre).</div>
 <div class="reactbar" id="reactbar">
 <button onclick="sendReaction('❤️')">❤️</button>
 <button onclick="sendReaction('🔥')">🔥</button>
@@ -147,7 +153,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </main></div><div id="toast" class="toast"></div>
 <div id="thanksOverlay" class="thanks-overlay hidden" onclick="this.classList.add('hidden')">
   <div class="thanks-card">
-    <div class="thanks-photo" id="thanksPhoto">🎤</div>
+    <div class="thanks-photo" id="thanksPhoto">🎤<span class="checkbadge">✓</span></div>
     <div class="thanks-title">¡GRACIAS POR VOTAR! 🎉</div>
     <div id="thanksText" class="thanks-text"></div>
   </div>
@@ -207,11 +213,15 @@ function renderAll(){
 }
 
 let lastLiveId=null;
+const PALETTE=['#ff3fa4','#22d9ff','#ffc42e','#20df67','#7c22d6','#ff7a3d','#3fa9ff','#ff4d6d'];
+function colorFor(id){return PALETTE[(id||0)%PALETTE.length]}
 function renderCurrent(){
   const p=currentParticipant();
   if(p && p.id!==lastLiveId){ratings=[null,null,null,null,null];touched=[false,false,false,false,false]}
   lastLiveId=p?p.id:lastLiveId;
-  document.getElementById('avatar').innerHTML=p?(p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji):'🎤';
+  const photoHtml=p?(p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji):'🎤';
+  document.getElementById('avatar').innerHTML=(p?`<span class="numchip">${String((p.position||1)).padStart(2,'0')}</span>`:'')+photoHtml;
+  document.getElementById('currentCard').style.setProperty('--pcolor',p?colorFor(p.id):'#a82aff');
   document.getElementById('currentName').textContent=p?p.name:'—';
   document.getElementById('currentSong').textContent=p?('🎵 '+p.song):'Esperando al administrador…';
   const open=!!(p && state.settings.voting_open);
@@ -274,7 +284,7 @@ async function submitVote(){
 }
 function showThanks(p,name){
   const o=document.getElementById('thanksOverlay');
-  document.getElementById('thanksPhoto').innerHTML=p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji;
+  document.getElementById('thanksPhoto').innerHTML=(p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji)+'<span class="checkbadge">✓</span>';
   document.getElementById('thanksText').textContent=`Gracias ${name}, tu voto para ${p.name} quedó registrado 🎉`;
   o.classList.remove('hidden');
   clearTimeout(window._thanksTimer);
