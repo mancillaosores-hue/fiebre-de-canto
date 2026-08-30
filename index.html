@@ -15,6 +15,9 @@ button,input{font:inherit}.app{display:grid;grid-template-columns:250px 1fr;min-
 nav{margin-top:25px;display:grid;gap:9px}nav button{border:0;background:transparent;color:#ddd;text-align:left;padding:14px 16px;border-radius:10px;cursor:pointer}nav button.active,nav button:hover{background:linear-gradient(90deg,#6419b5,#8c31df);color:#fff}
 .sidefoot{position:absolute;bottom:20px;color:#888da9;font-size:12px;text-align:center;width:calc(100% - 30px)}
 main{padding:10px;max-width:1500px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;gap:10px;background:#0d1029cc;border-radius:10px;padding:14px 22px;margin-bottom:10px;border:1px solid #24294c;flex-wrap:wrap}.live{font-size:18px;font-weight:800}.live i{display:inline-block;width:10px;height:10px;background:#ff3030;border-radius:50%;margin-left:8px}.sub{font-size:13px;color:var(--muted);margin-top:3px}.stats{display:flex;gap:10px}.stat{min-width:150px;border:1px solid #343858;border-radius:12px;padding:9px 18px;background:#11152e}.stat b{font-size:20px;display:block}.grid{display:grid;grid-template-columns:1fr 1.08fr;gap:10px}.card{background:linear-gradient(145deg,#11152f,#0d1028);border:1px solid #24294d;border-radius:10px;padding:18px;box-shadow:0 10px 30px #0003}.current{text-align:center;background:radial-gradient(circle at 50% 35%,#351170 0,#11152f 42%,#0b0e24 100%)}.badge{display:inline-block;background:#7821c8;padding:8px 20px;border-radius:8px;font-weight:800}.avatar{width:150px;height:150px;border-radius:50%;margin:15px auto;border:4px solid #a82aff;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#201b53,#50227e);font-size:60px;box-shadow:0 0 30px #922cff88}.current h1{margin:8px 0 3px}.song{color:#c8c7dc}.votestatus{margin:15px auto;font-size:22px;font-weight:900}
+.quickctrl{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(90deg,#1a103e,#2d0e55);border:1px solid #5a2f9c;border-radius:12px;padding:14px 18px;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.qc-label{font-size:11px;color:#c9a8ff;font-weight:800;letter-spacing:1px}
+.qc-name{font-size:20px;font-weight:900}
 .reactbar{display:flex;justify-content:center;gap:12px;margin-top:14px}
 .reactbar button{width:52px;height:52px;border-radius:50%;border:2px solid #3b3f60;background:#151934;font-size:24px;cursor:pointer;transition:transform .15s}
 .reactbar button:active{transform:scale(1.3)}
@@ -102,7 +105,12 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <button onclick="adminTab('settingsTab',this)">Configuración</button>
 <button onclick="adminTab('votersTab',this)">Quién votó</button>
 </div>
-<div id="plist"><div style="display:flex;justify-content:space-between;align-items:center"><b>Lista de participantes</b><button class="primary" onclick="addPerson()">＋ AGREGAR</button></div><div id="adminList"></div></div>
+<div id="plist">
+<div class="quickctrl" id="quickCtrl">
+  <div><div class="qc-label">EN ESCENA AHORA</div><div class="qc-name" id="qcName">— nadie —</div></div>
+  <div id="qcButtons"></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center"><b>Lista de participantes</b><button class="primary" onclick="addPerson()">＋ AGREGAR</button></div><div id="adminList"></div></div>
 <div id="settingsTab" class="hidden"><div class="form">
 <input id="eventNameInput" placeholder="Nombre del evento">
 <input id="secondsInput" type="number" min="15" placeholder="Segundos de votación">
@@ -346,6 +354,13 @@ function renderAdminList(){
       <button class="del" onclick="deletePerson(${p.id})">🗑</button>
     </div></div>`;
   }).join('')||'<div class="notice">Agrega participantes para comenzar.</div>';
+
+  const cp=currentParticipant();
+  document.getElementById('qcName').textContent=cp?cp.name:'— nadie —';
+  const open=!!(cp && state.settings.voting_open);
+  document.getElementById('qcButtons').innerHTML = !cp ? '' :
+    (open ? `<button class="primary" style="background:#20b957" onclick="closeVoting()">🔒 CERRAR VOTACIÓN</button>`
+          : `<button class="primary blue" onclick="reopenVoting()">🔓 REABRIR VOTACIÓN</button>`);
 }
 
 async function addPerson(){
@@ -430,7 +445,6 @@ init();
        <img id="dqr" style="width:90px;height:90px;border-radius:8px;background:#fff;padding:4px" />
        <div style="font-size:13px;color:#c9caea;margin-top:4px">Escanea para votar</div>
      </div>
-     <div class="display-clock" id="dclock">--:--</div>
    </div>
    <div class="current-display">
       <div class="display-label">🎙️ PARTICIPANTE EN ESCENA</div>
@@ -512,7 +526,6 @@ init();
    statusEl.textContent = !cp ? '' : (open?'🗳️ ¡VOTEN AHORA!':'🔒 VOTACIÓN CERRADA');
    statusEl.style.background = !cp ? 'transparent' : (open?'#16b954':'#7a1f1f');
    statusEl.style.color = '#fff';
-   document.getElementById('dclock').textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
 
    const winEl=document.getElementById('winnerOverlay');
    if(sett?.show_winner && list.length){
