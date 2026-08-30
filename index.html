@@ -18,6 +18,9 @@ main{padding:10px;max-width:1500px;width:100%;margin:auto}.top{display:flex;just
 .namebox{display:flex;gap:8px;margin-bottom:14px}.namebox input{flex:1;background:#0b0f25;border:1px solid #3b3f60;color:#fff;padding:11px;border-radius:8px}
 .rating{display:grid;gap:12px;margin-top:8px}.row{display:grid;grid-template-columns:1fr 46px;align-items:center;gap:10px;padding:12px;border:1px solid #3b3f60;border-radius:10px;background:#151934}
 .row label{font-weight:800;display:block;margin-bottom:8px;grid-column:1/-1}
+.numpick{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:7px}
+.numbtn{width:36px;height:36px;border-radius:50%;border:2px solid #3b3f60;background:#0b0f25;color:#cfd1e8;font-weight:800;cursor:pointer}
+.numbtn.on{background:linear-gradient(135deg,#ffc42e,#ff8f3f);border-color:#ffc42e;color:#241800;transform:scale(1.12);box-shadow:0 0 10px #ffb02e88}
 .slidewrap{display:flex;align-items:center;gap:10px}
 input[type=range]{-webkit-appearance:none;width:100%;height:10px;border-radius:6px;background:linear-gradient(90deg,var(--pink),var(--gold) var(--pct,50%),#3b3f60 var(--pct,50%));outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid var(--purple);cursor:pointer;box-shadow:0 0 8px #000a}
@@ -38,11 +41,11 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <aside class="side">
 <div class="logo">🎤<br>FIEBRE DE CANTO<span>FAMILIAR</span></div>
 <nav>
-<button class="active" onclick="show('live',this)">🏠 En Vivo</button>
-<button onclick="show('results',this)">📊 Resultados</button>
-<button onclick="show('people',this)">👥 Participantes</button>
+<button class="active" onclick="show('live',this)">🏠 Votar</button>
+<button id="navResults" class="hidden" onclick="show('results',this)">📊 Resultados</button>
+<button id="navPeople" class="hidden" onclick="show('people',this)">👥 Participantes</button>
 <button onclick="show('admin',this)">⚙️ Admin</button>
-<button onclick="show('help',this)">ℹ️ Instrucciones</button>
+<button id="navHelp" class="hidden" onclick="show('help',this)">ℹ️ Instrucciones</button>
 </nav>
 <div class="sidefoot">Fiebre de Canto Familiar<br>2026 ❤️</div>
 </aside>
@@ -61,7 +64,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <div class="notice">🔒 Tu voto queda registrado con tu nombre y no se puede modificar.</div>
 </div>
 </div>
-<div class="grid section">
+<div id="liveAdminExtras" class="grid section hidden">
 <div class="card"><h2>🏆 RESULTADOS EN VIVO</h2><div id="ranking"></div><div class="notice">Se actualiza automáticamente en todos los celulares</div></div>
 <div class="card"><h2>👥 Votantes de este participante</h2><div id="voterListLive" class="notice">—</div></div>
 </div>
@@ -169,14 +172,11 @@ setInterval(tick,500);
 
 function renderRatings(){
   document.getElementById('ratings').innerHTML=cats.map((c,i)=>{
-    const val=ratings[i]===null?5:ratings[i];
-    const pct=((val-1)/9*100).toFixed(0);
+    const val=ratings[i];
     const pending=!touched[i];
-    return `<div class="row" style="${pending?'border-color:#ff7a3d':''}"><label>${c[0]} ${c[1]} ${pending?'<span style=\"color:#ff7a3d;font-size:12px\">— falta calificar</span>':'✅'}</label>
-    <div class="slidewrap">
-      <input type="range" min="1" max="10" step="1" value="${val}" style="--pct:${pct}%" oninput="rate(${i},this.value)">
-      <input class="score" type="number" min="1" max="10" value="${ratings[i]===null?'':ratings[i]}" placeholder="?" oninput="rate(${i},this.value)">
-    </div></div>`;
+    const nums=[1,2,3,4,5,6,7,8,9,10].map(n=>`<button type="button" class="numbtn ${val===n?'on':''}" onclick="rate(${i},${n})">${n}</button>`).join('');
+    return `<div class="row" style="${pending?'border-color:#ff7a3d':''}"><label>${c[0]} ${c[1]} ${pending?'<span style="color:#ff7a3d;font-size:12px">— falta calificar</span>':'✅'}</label>
+    <div class="numpick">${nums}</div></div>`;
   }).join('');
   const done=touched.filter(Boolean).length;
   document.getElementById('total').textContent = done<5 ? `Faltan ${5-done}/5` : ratings.reduce((a,b)=>a+Number(b),0);
@@ -248,16 +248,26 @@ function adminTab(id,btn){
 }
 
 // ---- Admin ----
-function unlockAdmin(){
-  const pin=document.getElementById('pinInput').value.trim();
-  if(!pin) return;
-  adminPin=pin; sessionStorage.setItem('fc_admin_pin',pin);
+let isAdmin=false;
+function revealAdminUI(){
+  isAdmin=true;
+  document.getElementById('navResults').classList.remove('hidden');
+  document.getElementById('navPeople').classList.remove('hidden');
+  document.getElementById('navHelp').classList.remove('hidden');
+  document.getElementById('liveAdminExtras').classList.remove('hidden');
   document.getElementById('adminLock').classList.add('hidden');
   document.getElementById('adminPanel').classList.remove('hidden');
   document.getElementById('eventNameInput').value=state.settings.event_name||'';
   document.getElementById('secondsInput').value=state.settings.seconds_per_vote||60;
 }
-if(adminPin){ /* se desbloquea tras cargar datos, ver init() */ }
+async function unlockAdmin(){
+  const pin=document.getElementById('pinInput').value.trim();
+  if(!pin) return;
+  const {error}=await sb.rpc('check_admin_pin',{p_pin:pin});
+  if(error) return toast('❌ PIN incorrecto',true);
+  adminPin=pin; sessionStorage.setItem('fc_admin_pin',pin);
+  revealAdminUI();
+}
 
 async function rpc(fn,args){
   const {data,error}=await sb.rpc(fn,{p_pin:adminPin,...args});
@@ -324,10 +334,9 @@ async function init(){
   document.getElementById('voterName').value=localStorage.getItem('fc_voter_name')||'';
   await loadAll();
   if(adminPin){
-    document.getElementById('adminLock').classList.add('hidden');
-    document.getElementById('adminPanel').classList.remove('hidden');
-    document.getElementById('eventNameInput').value=state.settings.event_name||'';
-    document.getElementById('secondsInput').value=state.settings.seconds_per_vote||60;
+    const {error}=await sb.rpc('check_admin_pin',{p_pin:adminPin});
+    if(!error) revealAdminUI();
+    else { adminPin=null; sessionStorage.removeItem('fc_admin_pin'); }
   }
 }
 init();
