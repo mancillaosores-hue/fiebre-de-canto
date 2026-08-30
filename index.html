@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fiebre de Canto Familiar</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#07091c;--panel:#11152f;--panel2:#171b3b;--purple:#7c22d6;--pink:#ff3fa4;--cyan:#22d9ff;--gold:#ffc42e;--green:#20df67;--text:#f6f5ff;--muted:#a7aac8;--danger:#ff4545}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:radial-gradient(circle at 70% 10%,#24104d 0,#07091c 42%,#040510 100%);color:var(--text);min-height:100vh}
+body.big-mode{font-size:20px}
+button,input{font:inherit}.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}.side{padding:18px 15px;background:#080b22;border-right:1px solid #25294d;position:sticky;top:0;height:100vh}
+.logo{height:170px;border-radius:14px;background:linear-gradient(145deg,#17103b,#050819);display:flex;align-items:center;justify-content:center;text-align:center;box-shadow:0 0 35px #6d19bb55;font-weight:900;font-size:28px;line-height:.95;color:#fff;text-shadow:0 0 12px var(--cyan)}.logo span{display:block;color:var(--pink);font-size:15px;margin-top:10px}
+nav{margin-top:25px;display:grid;gap:9px}nav button{border:0;background:transparent;color:#ddd;text-align:left;padding:14px 16px;border-radius:10px;cursor:pointer}nav button.active,nav button:hover{background:linear-gradient(90deg,#6419b5,#8c31df);color:#fff}
+.sidefoot{position:absolute;bottom:20px;color:#888da9;font-size:12px;text-align:center;width:calc(100% - 30px)}
+main{padding:10px;max-width:1500px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;gap:10px;background:#0d1029cc;border-radius:10px;padding:14px 22px;margin-bottom:10px;border:1px solid #24294c;flex-wrap:wrap}.live{font-size:18px;font-weight:800}.live i{display:inline-block;width:10px;height:10px;background:#ff3030;border-radius:50%;margin-left:8px}.sub{font-size:13px;color:var(--muted);margin-top:3px}.stats{display:flex;gap:10px}.stat{min-width:150px;border:1px solid #343858;border-radius:12px;padding:9px 18px;background:#11152e}.stat b{font-size:20px;display:block}.grid{display:grid;grid-template-columns:1fr 1.08fr;gap:10px}.card{background:linear-gradient(145deg,#11152f,#0d1028);border:1px solid #24294d;border-radius:10px;padding:18px;box-shadow:0 10px 30px #0003}.current{text-align:center;background:radial-gradient(circle at 50% 35%,#351170 0,#11152f 42%,#0b0e24 100%)}.badge{display:inline-block;background:#7821c8;padding:8px 20px;border-radius:8px;font-weight:800}.avatar{width:150px;height:150px;border-radius:50%;margin:15px auto;border:4px solid #a82aff;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#201b53,#50227e);font-size:60px;box-shadow:0 0 30px #922cff88}.current h1{margin:8px 0 3px}.song{color:#c8c7dc}.timer{margin:18px auto;padding:12px;border:1px solid #555a82;border-radius:9px;max-width:300px}.timer strong{display:block;font-size:44px;color:#ffc21e}
+.primary{border:0;border-radius:30px;background:linear-gradient(90deg,#8b20dc,#b52cda);color:#fff;padding:13px 28px;font-weight:900;cursor:pointer}.primary:disabled{opacity:.45;cursor:default}.blue{background:#08749b}.green{background:linear-gradient(90deg,#10bb51,#24e768)}
+.namebox{display:flex;gap:8px;margin-bottom:14px}.namebox input{flex:1;background:#0b0f25;border:1px solid #3b3f60;color:#fff;padding:11px;border-radius:8px}
+.rating{display:grid;gap:12px;margin-top:8px}.row{display:grid;grid-template-columns:1fr 46px;align-items:center;gap:10px;padding:12px;border:1px solid #3b3f60;border-radius:10px;background:#151934}
+.row label{font-weight:800;display:block;margin-bottom:8px;grid-column:1/-1}
+.slidewrap{display:flex;align-items:center;gap:10px}
+input[type=range]{-webkit-appearance:none;width:100%;height:10px;border-radius:6px;background:linear-gradient(90deg,var(--pink),var(--gold) var(--pct,50%),#3b3f60 var(--pct,50%));outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid var(--purple);cursor:pointer;box-shadow:0 0 8px #000a}
+input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid var(--purple);cursor:pointer}
+.score{font-size:19px;font-weight:900;border:1px solid #4a4f75;padding:6px 2px;border-radius:7px;text-align:center;background:#0b0f25;color:#fff;width:46px}
+.total{margin-top:12px;background:#171a36;padding:15px;border-radius:10px;text-align:center}.total b{font-size:34px;color:#caa6ff}.submit{width:100%;margin-top:12px}.notice{text-align:center;color:#8e91ad;font-size:12px;margin-top:9px}.section{margin-top:10px}.section h2{margin:0 0 12px}
+.rank{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid #363a5b;border-radius:9px;margin:7px 0;background:#151934}.rank.first{border-color:#ffc21d;background:#241e16}.place{font-size:23px;font-weight:900;width:34px;text-align:center}.mini{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#242a63,#7525a5);display:flex;align-items:center;justify-content:center;font-size:23px;flex-shrink:0}.rname{flex:1;min-width:0}.points{font-size:20px;font-weight:900}
+.adminrow{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid #333756;border-radius:8px;margin:6px 0;flex-wrap:wrap}.adminrow .rname{min-width:120px}.actions button{border:0;border-radius:6px;padding:8px;margin-left:4px;cursor:pointer}.edit{background:#1675d1;color:#fff}.del{background:#ef3636;color:#fff}.live-btn{background:#20df67;color:#052;font-weight:800}.live-btn.on{background:#ff3030;color:#fff}
+.tabs{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}.tabs button{background:#222743;color:#ddd;border:0;padding:9px 14px;border-radius:7px;cursor:pointer}.tabs button.active{background:#7621c9}.hidden{display:none}.form{display:grid;gap:9px;margin-top:12px}.form input{background:#0b0f25;border:1px solid #3b3f60;color:white;padding:11px;border-radius:7px}
+.footer{margin-top:10px;background:linear-gradient(90deg,#1a103e,#2d0e55);padding:10px 25px;border-radius:8px;display:flex;justify-content:space-between;flex-wrap:wrap}.toast{position:fixed;right:20px;bottom:20px;background:#20b957;color:white;padding:14px 18px;border-radius:10px;display:none;font-weight:800;box-shadow:0 10px 30px #0008;z-index:99}.toast.err{background:#d9313f}
+.votetable{width:100%;border-collapse:collapse;font-size:13px}.votetable th,.votetable td{text-align:left;padding:8px;border-bottom:1px solid #2a2e50}
+@media(max-width:1000px){.app{grid-template-columns:1fr}.side{height:auto;position:relative}.sidefoot{display:none}.logo{height:80px;font-size:24px}nav{grid-template-columns:repeat(4,1fr)}nav button{padding:10px}.grid{grid-template-columns:1fr}.stats{display:none}}
+@media(max-width:600px){nav{grid-template-columns:repeat(2,1fr)}main{padding:6px}.star{font-size:19px}.footer{font-size:11px}.card{padding:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+<div class="logo">🎤<br>FIEBRE DE CANTO<span>FAMILIAR</span></div>
+<nav>
+<button class="active" onclick="show('live',this)">🏠 En Vivo</button>
+<button onclick="show('results',this)">📊 Resultados</button>
+<button onclick="show('people',this)">👥 Participantes</button>
+<button onclick="show('admin',this)">⚙️ Admin</button>
+<button onclick="show('help',this)">ℹ️ Instrucciones</button>
+</nav>
+<div class="sidefoot">Fiebre de Canto Familiar<br>2026 ❤️</div>
+</aside>
+<main>
+<header class="top"><div><div class="live">EN VIVO <i></i></div><div class="sub" id="eventName">La familia está votando</div></div><div class="stats"><div class="stat">👨‍👩‍👧‍👦 Votantes <b id="voters">0</b></div><div class="stat">🕒 Hora <b id="clock">--:--</b></div></div></header>
+
+<section id="live" class="page">
+<div class="grid">
+<div class="card current"><span class="badge">PARTICIPANTE ACTUAL</span><div class="avatar" id="avatar">🎤</div><h1 id="currentName">—</h1><div class="song" id="currentSong">Esperando al administrador…</div><div class="timer"><div>Tiempo para votar</div><strong id="timer">--:--</strong></div><div class="notice">ℹ️ Solo puedes votar UNA VEZ por participante (con tu nombre).</div></div>
+<div class="card"><h2>🎙️ TU VOTACIÓN</h2>
+<div class="namebox"><input id="voterName" placeholder="Tu nombre o apodo" maxlength="40"></div>
+<div class="sub">Desliza o escribe el puntaje (1 a 10) en cada categoría</div>
+<div id="ratings" class="rating"></div>
+<div class="total">TOTAL <small>(de 50 puntos)</small><br><b id="total">0</b></div>
+<button class="primary green submit" id="submitBtn" onclick="submitVote()">ENVIAR VOTO ➤</button>
+<div class="notice">🔒 Tu voto queda registrado con tu nombre y no se puede modificar.</div>
+</div>
+</div>
+<div class="grid section">
+<div class="card"><h2>🏆 RESULTADOS EN VIVO</h2><div id="ranking"></div><div class="notice">Se actualiza automáticamente en todos los celulares</div></div>
+<div class="card"><h2>👥 Votantes de este participante</h2><div id="voterListLive" class="notice">—</div></div>
+</div>
+</section>
+
+<section id="results" class="page hidden"><div class="card"><h1>🏆 Resultados finales</h1><p class="sub">Ranking según la suma de todos los votos recibidos.</p><div id="bigRanking"></div></div></section>
+<section id="people" class="page hidden"><div class="card"><h1>👥 Participantes</h1><div id="peopleList"></div></div></section>
+
+<section id="admin" class="page hidden">
+<div class="card">
+<h1>⚙️ Administración</h1>
+<div id="adminLock">
+<p class="sub">Ingresa el PIN de administrador para gestionar el concurso.</p>
+<div class="form"><input id="pinInput" placeholder="PIN" type="password"><button class="primary" onclick="unlockAdmin()">DESBLOQUEAR</button></div>
+</div>
+<div id="adminPanel" class="hidden">
+<div class="tabs">
+<button class="active" onclick="adminTab('plist',this)">Participantes</button>
+<button onclick="adminTab('settingsTab',this)">Configuración</button>
+<button onclick="adminTab('votersTab',this)">Quién votó</button>
+</div>
+<div id="plist"><div style="display:flex;justify-content:space-between;align-items:center"><b>Lista de participantes</b><button class="primary" onclick="addPerson()">＋ AGREGAR</button></div><div id="adminList"></div></div>
+<div id="settingsTab" class="hidden"><div class="form">
+<input id="eventNameInput" placeholder="Nombre del evento">
+<input id="secondsInput" type="number" min="15" placeholder="Segundos de votación">
+<button class="primary" onclick="saveSettings()">GUARDAR CONFIGURACIÓN</button>
+<button class="primary blue" onclick="restartTimer()">⏱️ REINICIAR TIEMPO</button>
+<button class="primary" style="background:#33395c" onclick="resetVotes()">↻ BORRAR TODOS LOS VOTOS</button>
+<hr style="border-color:#333756;width:100%">
+<input id="newPin1" placeholder="Nuevo PIN">
+<button class="primary" style="background:#33395c" onclick="changePin()">CAMBIAR PIN</button>
+</div></div>
+<div id="votersTab" class="hidden"><table class="votetable" id="votersTable"><thead><tr><th>Nombre</th><th>Participante</th><th>Puntos</th><th>Hora</th></tr></thead><tbody id="votersBody"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<section id="help" class="page hidden"><div class="card"><h1>ℹ️ Cómo funciona</h1><ol><li>Cada participante interpreta una canción.</li><li>El administrador marca quién está "en vivo" en la pestaña Admin.</li><li>El público escribe su nombre y califica de 1 a 10 en cinco categorías (deslizando o escribiendo el número).</li><li>Cada persona vota una sola vez por cada participante (se identifica por su nombre).</li><li>Los votos se suman en tiempo real entre todos los celulares conectados.</li><li>El administrador puede agregar, editar y eliminar participantes con su PIN.</li></ol><p><b>Pantalla grande:</b> abre este mismo archivo agregando <code>?pantalla=resultados</code> al final del link para mostrar el ranking en un TV o proyector.</p></div></section>
+
+<div class="footer">🎵 ¡Que gane el mejor! 🎤 <span>Fiebre de Canto Familiar ❤️</span></div>
+</main></div><div id="toast" class="toast"></div>
+
+<script>
+const SUPABASE_URL='https://xhvqudltvtfsdnycigjp.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const cats=[['🎵','Voz'],['❤️','Interpretación'],['⚡','Desplante'],['💃','Show'],['😊','Entretenimiento']];
+
+let state={participants:[],settings:{},votes:[]};
+let ratings=[null,null,null,null,null];
+let touched=[false,false,false,false,false];
+function allTouched(){return touched.every(t=>t)}
+let adminPin=sessionStorage.getItem('fc_admin_pin')||null;
+
+function toast(t,err){let x=document.getElementById('toast');x.textContent=t;x.className='toast'+(err?' err':'');x.style.display='block';setTimeout(()=>x.style.display='none',2500)}
+
+async function loadAll(){
+  const [{data:parts},{data:sett},{data:votes}] = await Promise.all([
+    sb.from('participants').select('*').order('position'),
+    sb.from('settings').select('*').eq('id',1).single(),
+    sb.from('votes').select('*')
+  ]);
+  state.participants=parts||[];
+  state.settings=sett||{};
+  state.votes=votes||[];
+  renderAll();
+}
+
+function currentParticipant(){return state.participants.find(p=>p.id===state.settings.current_participant_id)}
+function votesFor(id){return state.votes.filter(v=>v.participant_id===id)}
+function sumFor(id){return votesFor(id).reduce((a,v)=>a+Number(v.total),0)}
+function hasVoted(id,name){const key=(name||'').trim().toLowerCase();return votesFor(id).some(v=>v.voter_name_key===key)}
+
+function renderAll(){
+  document.getElementById('eventName').textContent=state.settings.event_name||'La familia está votando';
+  document.getElementById('voters').textContent=new Set(state.votes.map(v=>v.voter_name_key)).size;
+  renderCurrent();
+  renderRatings();
+  renderRanking();
+  renderPeople();
+  renderAdminList();
+  renderVotersTable();
+  renderLiveVoterList();
+}
+
+let lastLiveId=null;
+function renderCurrent(){
+  const p=currentParticipant();
+  if(p && p.id!==lastLiveId){ratings=[null,null,null,null,null];touched=[false,false,false,false,false]}
+  lastLiveId=p?p.id:lastLiveId;
+  document.getElementById('avatar').textContent=p?p.emoji:'🎤';
+  document.getElementById('currentName').textContent=p?p.name:'—';
+  document.getElementById('currentSong').textContent=p?('🎵 '+p.song):'Esperando al administrador…';
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=!p;
+}
+
+function tick(){
+  const ends=state.settings.vote_ends_at?new Date(state.settings.vote_ends_at).getTime():null;
+  const s=ends?Math.max(0,Math.ceil((ends-Date.now())/1000)):0;
+  document.getElementById('timer').textContent=ends?`00:${String(s).padStart(2,'0')}`:'--:--';
+  document.getElementById('clock').textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(tick,500);
+
+function renderRatings(){
+  document.getElementById('ratings').innerHTML=cats.map((c,i)=>{
+    const val=ratings[i]===null?5:ratings[i];
+    const pct=((val-1)/9*100).toFixed(0);
+    const pending=!touched[i];
+    return `<div class="row" style="${pending?'border-color:#ff7a3d':''}"><label>${c[0]} ${c[1]} ${pending?'<span style=\"color:#ff7a3d;font-size:12px\">— falta calificar</span>':'✅'}</label>
+    <div class="slidewrap">
+      <input type="range" min="1" max="10" step="1" value="${val}" style="--pct:${pct}%" oninput="rate(${i},this.value)">
+      <input class="score" type="number" min="1" max="10" value="${ratings[i]===null?'':ratings[i]}" placeholder="?" oninput="rate(${i},this.value)">
+    </div></div>`;
+  }).join('');
+  const done=touched.filter(Boolean).length;
+  document.getElementById('total').textContent = done<5 ? `Faltan ${5-done}/5` : ratings.reduce((a,b)=>a+Number(b),0);
+  document.getElementById('submitBtn').disabled = !currentParticipant() || !allTouched();
+}
+function rate(i,v){v=Math.max(1,Math.min(10,Math.round(Number(v)||1)));ratings[i]=v;touched[i]=true;renderRatings()}
+
+async function submitVote(){
+  const p=currentParticipant();
+  if(!p) return toast('Aún no hay participante en vivo',true);
+  const name=document.getElementById('voterName').value.trim();
+  if(!name) return toast('Escribe tu nombre o apodo',true);
+  if(!allTouched()) return toast('⚠️ Debes calificar las 5 categorías',true);
+  localStorage.setItem('fc_voter_name',name);
+  if(hasVoted(p.id,name)) return toast('⚠️ Ya votaste por este participante',true);
+  const {error}=await sb.from('votes').insert({
+    participant_id:p.id, voter_name:name, device_id:deviceId(), scores:ratings
+  });
+  if(error){
+    if(error.code==='23505') toast('⚠️ Ya votaste por este participante',true);
+    else toast('Error al votar: '+error.message,true);
+    return;
+  }
+  toast('✅ ¡Voto registrado!');
+  ratings=[null,null,null,null,null];
+  touched=[false,false,false,false,false];
+  await loadAll();
+}
+function deviceId(){let id=localStorage.getItem('fc_device');if(!id){id='D'+Math.random().toString(36).slice(2);localStorage.setItem('fc_device',id)}return id}
+
+function renderRanking(){
+  const list=[...state.participants].sort((a,b)=>sumFor(b.id)-sumFor(a.id));
+  const rowHtml=(p,i,big)=>`<div class="rank ${i===0?'first':''}"><div class="place">${big?(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1):i+1}</div><div class="mini">${p.emoji}</div><div class="rname"><b>${p.name}</b><div class="sub">${votesFor(p.id).length} votos</div></div><div class="points">${sumFor(p.id).toFixed(0)} pts</div></div>`;
+  document.getElementById('ranking').innerHTML=list.map((p,i)=>rowHtml(p,i,false)).join('')||'<div class="notice">Aún no hay participantes.</div>';
+  document.getElementById('bigRanking').innerHTML=list.map((p,i)=>rowHtml(p,i,true)).join('')||'<div class="notice">Aún no hay participantes.</div>';
+}
+
+function renderPeople(){
+  document.getElementById('peopleList').innerHTML=state.participants.map((p,i)=>`<div class="rank"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${p.emoji}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div></div>`).join('')||'<div class="notice">Aún no hay participantes.</div>';
+}
+
+function renderLiveVoterList(){
+  const p=currentParticipant();
+  const el=document.getElementById('voterListLive');
+  if(!p){el.textContent='—';return}
+  const names=votesFor(p.id).map(v=>v.voter_name);
+  el.textContent=names.length?names.join(', '):'Nadie ha votado todavía por este participante.';
+}
+
+function renderVotersTable(){
+  const rows=[...state.votes].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(v=>{
+    const p=state.participants.find(x=>x.id===v.participant_id);
+    return `<tr><td>${v.voter_name}</td><td>${p?p.name:'—'}</td><td>${Number(v.total).toFixed(0)}</td><td>${new Date(v.created_at).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})}</td></tr>`;
+  }).join('');
+  document.getElementById('votersBody').innerHTML=rows||'<tr><td colspan="4" class="notice">Sin votos aún.</td></tr>';
+}
+
+// ---- Navegación ----
+function show(id,btn){
+  document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+function adminTab(id,btn){
+  ['plist','settingsTab','votersTab'].forEach(t=>document.getElementById(t).classList.toggle('hidden',t!==id));
+  document.querySelectorAll('#admin .tabs button').forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ---- Admin ----
+function unlockAdmin(){
+  const pin=document.getElementById('pinInput').value.trim();
+  if(!pin) return;
+  adminPin=pin; sessionStorage.setItem('fc_admin_pin',pin);
+  document.getElementById('adminLock').classList.add('hidden');
+  document.getElementById('adminPanel').classList.remove('hidden');
+  document.getElementById('eventNameInput').value=state.settings.event_name||'';
+  document.getElementById('secondsInput').value=state.settings.seconds_per_vote||60;
+}
+if(adminPin){ /* se desbloquea tras cargar datos, ver init() */ }
+
+async function rpc(fn,args){
+  const {data,error}=await sb.rpc(fn,{p_pin:adminPin,...args});
+  if(error){toast('❌ '+(error.message||'Error'),true);throw error}
+  return data;
+}
+
+function renderAdminList(){
+  document.getElementById('adminList').innerHTML=state.participants.map((p,i)=>{
+    const isLive=state.settings.current_participant_id===p.id;
+    return `<div class="adminrow"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${p.emoji}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div>
+    <div class="actions">
+      <button class="live-btn ${isLive?'on':''}" onclick="setLive(${p.id})">${isLive?'EN VIVO':'Poner en vivo'}</button>
+      <button class="edit" onclick="editPerson(${p.id})">✎</button>
+      <button class="del" onclick="deletePerson(${p.id})">🗑</button>
+    </div></div>`;
+  }).join('')||'<div class="notice">Agrega participantes para comenzar.</div>';
+}
+
+async function addPerson(){
+  const name=prompt('Nombre del participante:'); if(!name)return;
+  const song=prompt('Canción:')||'Canción pendiente';
+  try{ await rpc('admin_add_participant',{p_name:name,p_song:song,p_emoji:'🎤'}); await loadAll(); toast('✅ Participante agregado');}catch(e){}
+}
+async function editPerson(id){
+  const p=state.participants.find(x=>x.id===id);
+  const name=prompt('Nombre:',p.name); if(name===null)return;
+  const song=prompt('Canción:',p.song)||p.song;
+  try{ await rpc('admin_edit_participant',{p_id:id,p_name:name,p_song:song,p_emoji:p.emoji}); await loadAll(); toast('✅ Guardado');}catch(e){}
+}
+async function deletePerson(id){
+  if(!confirm('¿Eliminar participante y sus votos?'))return;
+  try{ await rpc('admin_delete_participant',{p_id:id}); await loadAll(); toast('🗑 Eliminado');}catch(e){}
+}
+async function setLive(id){
+  try{ await rpc('admin_set_current',{p_id:id}); await loadAll(); toast('🎤 Participante en vivo actualizado');}catch(e){}
+}
+async function saveSettings(){
+  const name=document.getElementById('eventNameInput').value;
+  const secs=+document.getElementById('secondsInput').value||60;
+  try{ await rpc('admin_update_settings',{p_name:name,p_seconds:secs}); await loadAll(); toast('✅ Configuración guardada');}catch(e){}
+}
+async function restartTimer(){
+  try{ await rpc('admin_restart_timer',{}); await loadAll(); toast('⏱️ Tiempo reiniciado');}catch(e){}
+}
+async function resetVotes(){
+  if(!confirm('¿Borrar TODOS los votos? Esta acción no se puede deshacer.'))return;
+  try{ await rpc('admin_reset_votes',{}); await loadAll(); toast('↻ Votos reiniciados');}catch(e){}
+}
+async function changePin(){
+  const np=document.getElementById('newPin1').value.trim();
+  if(!np) return;
+  try{ await rpc('admin_change_pin',{p_old_pin:adminPin,p_new_pin:np}); adminPin=np; sessionStorage.setItem('fc_admin_pin',np); toast('✅ PIN actualizado'); document.getElementById('newPin1').value='';}catch(e){}
+}
+
+// ---- Tiempo real ----
+sb.channel('fiebre-de-canto')
+ .on('postgres_changes',{event:'*',schema:'public',table:'participants'},loadAll)
+ .on('postgres_changes',{event:'*',schema:'public',table:'votes'},loadAll)
+ .on('postgres_changes',{event:'*',schema:'public',table:'settings'},loadAll)
+ .subscribe();
+
+async function init(){
+  document.getElementById('voterName').value=localStorage.getItem('fc_voter_name')||'';
+  await loadAll();
+  if(adminPin){
+    document.getElementById('adminLock').classList.add('hidden');
+    document.getElementById('adminPanel').classList.remove('hidden');
+    document.getElementById('eventNameInput').value=state.settings.event_name||'';
+    document.getElementById('secondsInput').value=state.settings.seconds_per_vote||60;
+  }
+}
+init();
+</script>
+
+<script>
+/* Pantalla gigante: abre este mismo archivo con ?pantalla=resultados */
+(function(){
+ const params=new URLSearchParams(location.search);
+ if(params.get('pantalla')!=='resultados') return;
+ document.body.innerHTML=`
+ <div class="display">
+   <div class="display-head">
+     <div><div class="display-title">🎤 FIEBRE DE CANTO <span>FAMILIAR</span></div>
+     <div class="display-sub">RESULTADOS EN VIVO</div></div>
+     <div class="display-clock" id="dclock">--:--</div>
+   </div>
+   <div class="current-display">
+      <div class="display-label">🎙️ PARTICIPANTE EN ESCENA</div>
+      <div id="dname" class="dname">--</div>
+      <div id="dsong" class="dsong">--</div>
+      <div class="live-score" id="dscore">0<small> pts en vivo</small></div>
+      <div class="big-timer" id="dtimer">00:00</div>
+      <div class="vote-status" id="dstatus">🗳️ ¡VOTEN AHORA!</div>
+   </div>
+   <div class="podium" id="dpodium"></div>
+   <div class="display-footer">❤️ Gracias por participar · Los resultados se actualizan automáticamente</div>
+ </div>`;
+ document.body.classList.add('big-mode');
+
+ const SUPABASE_URL='https://xhvqudltvtfsdnycigjp.supabase.co';
+ const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
+ const dsb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+ async function refresh(){
+   const [{data:parts},{data:sett},{data:votes}]=await Promise.all([
+     dsb.from('participants').select('*').order('position'),
+     dsb.from('settings').select('*').eq('id',1).single(),
+     dsb.from('votes').select('*')
+   ]);
+   if(!parts) return;
+   const sumFor=id=>(votes||[]).filter(v=>v.participant_id===id).reduce((a,v)=>a+Number(v.total),0);
+   const list=[...parts].sort((a,b)=>sumFor(b.id)-sumFor(a.id));
+   document.getElementById('dpodium').innerHTML=list.slice(0,5).map((x,i)=>`
+    <div class="drow ${i===0?'dfirst':''}">
+      <div class="dplace">${['🥇','🥈','🥉','4','5'][i]}</div>
+      <div class="davatar">${x.emoji}</div>
+      <div class="dperson"><b>${x.name}</b><small>${x.song}</small></div>
+      <div class="dpoints">${sumFor(x.id).toFixed(0)}<small> pts</small></div>
+    </div>`).join('');
+   const cp=parts.find(p=>p.id===sett?.current_participant_id);
+   document.getElementById('dname').textContent=cp?cp.name:'--';
+   document.getElementById('dsong').textContent=cp?('🎵 '+cp.song):'--';
+   const liveScore=cp?sumFor(cp.id):0;
+   const scoreEl=document.getElementById('dscore');
+   if(scoreEl.dataset.prev!==String(liveScore)){scoreEl.style.transform='scale(1.15)';setTimeout(()=>scoreEl.style.transform='scale(1)',220)}
+   scoreEl.dataset.prev=String(liveScore);
+   scoreEl.innerHTML=liveScore.toFixed(0)+'<small> pts en vivo</small>';
+   const ends=sett?.vote_ends_at?new Date(sett.vote_ends_at).getTime():null;
+   const s=ends?Math.max(0,Math.ceil((ends-Date.now())/1000)):0;
+   document.getElementById('dtimer').textContent=ends?`00:${String(s).padStart(2,'0')}`:'00:00';
+   document.getElementById('dclock').textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+ }
+ refresh(); setInterval(refresh,1500);
+ dsb.channel('fiebre-display')
+   .on('postgres_changes',{event:'*',schema:'public',table:'votes'},refresh)
+   .on('postgres_changes',{event:'*',schema:'public',table:'settings'},refresh)
+   .on('postgres_changes',{event:'*',schema:'public',table:'participants'},refresh)
+   .subscribe();
+})();
+</script>
+<style>
+.display{min-height:100vh;padding:30px 5vw;background:radial-gradient(circle at 50% 0,#42117b,#08091c 55%);color:white}
+.display-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #45476b;padding-bottom:20px}
+.display-title{font-size:clamp(28px,4vw,60px);font-weight:1000;text-shadow:0 0 18px #a82aff}
+.display-title span{color:#ff42ae}.display-sub{font-size:clamp(16px,2vw,28px);color:#bfc2df;margin-top:5px}.display-clock{font-size:clamp(25px,4vw,55px);font-weight:900;color:#ffc321}
+.current-display{text-align:center;padding:25px 10px 18px}.display-label{font-size:20px;color:#d2a2ff;font-weight:900}.dname{font-size:clamp(38px,6vw,90px);font-weight:1000;margin:5px}.dsong{font-size:clamp(18px,2.5vw,32px);color:#c6c8df}.big-timer{font-size:clamp(60px,9vw,130px);font-weight:1000;color:#ffc321;line-height:1;margin:15px}
+.live-score{font-size:clamp(40px,7vw,90px);font-weight:1000;color:#20df67;text-shadow:0 0 20px #20df6788;transition:transform .2s ease;display:inline-block}
+.live-score small{font-size:clamp(14px,1.6vw,22px);color:#bfc2df;font-weight:700}.vote-status{display:inline-block;background:#16b954;border-radius:40px;padding:12px 30px;font-size:clamp(20px,3vw,35px);font-weight:1000}
+.podium{max-width:1000px;margin:10px auto}.drow{display:flex;align-items:center;gap:20px;padding:14px 20px;margin:8px 0;border:1px solid #363a60;border-radius:16px;background:#151934}.dfirst{border-color:#ffc321;background:#2b2416;box-shadow:0 0 25px #ffbd2433}.dplace{font-size:clamp(25px,3vw,45px);width:55px;text-align:center}.davatar{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#45206d;font-size:32px}.dperson{flex:1;font-size:clamp(20px,2.5vw,32px)}.dperson small{display:block;font-size:15px;color:#aaaec9;margin-top:4px}.dpoints{font-size:clamp(28px,4vw,48px);font-weight:1000;color:#cfa7ff}.dpoints small{font-size:15px}.display-footer{text-align:center;margin-top:25px;color:#9296b4;font-size:17px}
+</style>
+</body></html>
