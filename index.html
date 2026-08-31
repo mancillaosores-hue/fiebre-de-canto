@@ -18,7 +18,7 @@ main{padding:10px;max-width:1500px;width:100%;margin:auto}.top{display:flex;just
 .quickctrl{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(90deg,#1a103e,#2d0e55);border:1px solid #5a2f9c;border-radius:12px;padding:14px 18px;margin-bottom:16px;flex-wrap:wrap;gap:10px}
 .qc-label{font-size:11px;color:#c9a8ff;font-weight:800;letter-spacing:1px}
 .qc-name{font-size:20px;font-weight:900}
-.reactbar{display:flex;justify-content:center;gap:12px;margin-top:14px}
+.reactbar{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:14px}
 .reactbar button{width:52px;height:52px;border-radius:50%;border:2px solid #3b3f60;background:#151934;font-size:24px;cursor:pointer;transition:transform .15s}
 .reactbar button:active{transform:scale(1.3)}
 .thanks-overlay{position:fixed;inset:0;background:#050614ee;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -46,7 +46,13 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 .footer{margin-top:10px;background:linear-gradient(90deg,#1a103e,#2d0e55);padding:10px 25px;border-radius:8px;display:flex;justify-content:space-between;flex-wrap:wrap}.toast{position:fixed;right:20px;bottom:20px;background:#20b957;color:white;padding:14px 18px;border-radius:10px;display:none;font-weight:800;box-shadow:0 10px 30px #0008;z-index:99}.toast.err{background:#d9313f}
 .votetable{width:100%;border-collapse:collapse;font-size:13px}.votetable th,.votetable td{text-align:left;padding:8px;border-bottom:1px solid #2a2e50}
 @media(max-width:1000px){.app{grid-template-columns:1fr}.side{height:auto;position:relative}.sidefoot{display:none}.logo{height:80px;font-size:24px}nav{grid-template-columns:repeat(4,1fr)}nav button{padding:10px}.grid{grid-template-columns:1fr}.stats{display:none}}
-@media(max-width:600px){nav{grid-template-columns:repeat(2,1fr)}main{padding:6px}.star{font-size:19px}.footer{font-size:11px}.card{padding:12px}}
+@media(max-width:600px){nav{grid-template-columns:repeat(2,1fr)}main{padding:6px}.star{font-size:19px}.footer{font-size:11px}.card{padding:12px}
+.reactbar button{width:42px;height:42px;font-size:19px}
+.rosterrow{flex-wrap:wrap}
+.rvote{margin-left:auto}
+.votetable{font-size:11px}
+.landing-btn{padding:14px}
+}
 /* ===== Look premium tipo programa de talentos ===== */
 @keyframes spinRing{to{transform:rotate(360deg)}}
 @keyframes cardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
@@ -68,17 +74,14 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 @keyframes popIn{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
 .checkbadge{position:absolute;bottom:2px;right:2px;background:#20df67;color:#052;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;border:3px solid #0a0a1a;animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both}
 
-/* ===== Landing épico ===== */
+/* ===== Landing con foto de fondo ===== */
 @keyframes landingIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
-@keyframes stagePulse{0%,100%{text-shadow:0 0 20px #a82aff,0 0 50px #ff3fa4}50%{text-shadow:0 0 45px #a82aff,0 0 90px #ff3fa4}}
-@keyframes floatMic{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
-.landing{position:fixed;inset:0;z-index:400;background:radial-gradient(circle at 50% 25%,#3a1178,#0a0d24 55%,#050612 100%);display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+@keyframes shineSweep{0%{transform:translateX(-120%) rotate(8deg)}100%{transform:translateX(120%) rotate(8deg)}}
+.landing{position:fixed;inset:0;z-index:400;display:flex;align-items:flex-end;justify-content:center;text-align:center;overflow:hidden;background:#050612}
 .landing.hidden{display:none}
-.landing-inner{animation:landingIn .7s ease both}
-.landing-stage{font-size:70px;animation:floatMic 2.4s ease-in-out infinite}
-.landing-logo{font-size:clamp(30px,7vw,58px);font-weight:1000;color:#fff;line-height:1.05;animation:stagePulse 2.2s ease-in-out infinite;margin:8px 0}
-.landing-logo span{display:block;color:#ff42ae;font-size:clamp(16px,3vw,26px);letter-spacing:2px}
-.landing-sub{color:#c9caea;margin:16px 0 34px;font-size:17px}
+.landing-photo{background-image:url('fotos/file_00000000a910820eb1dac6f19ce10a1b.png');background-size:cover;background-position:center}
+.landing-shine{position:absolute;top:0;left:0;width:60%;height:200%;background:linear-gradient(90deg,transparent,#fff3,transparent);animation:shineSweep 4.5s ease-in-out infinite;pointer-events:none}
+.landing-inner-photo{animation:landingIn .8s ease both;position:relative;z-index:2;width:100%;padding:0 24px 44px;background:linear-gradient(to top,#050612ee 10%,#05061299 55%,transparent 100%);padding-top:90px}
 .landing-btn{display:block;width:300px;max-width:82vw;margin:12px auto;padding:17px;font-size:16px}
 
 /* ===== Roster de participantes ===== */
@@ -101,11 +104,9 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </style>
 </head>
 <body>
-<div id="landing" class="landing">
-  <div class="landing-inner">
-    <div class="landing-stage">🎤</div>
-    <div class="landing-logo">FIEBRE DE CANTO<span>FAMILIAR</span></div>
-    <div class="landing-sub">El show está por comenzar…</div>
+<div id="landing" class="landing landing-photo">
+  <div class="landing-shine"></div>
+  <div class="landing-inner-photo">
     <button class="primary green landing-btn" onclick="enterAs('voter')">🎉 INGRESAR COMO VOTANTE</button>
     <button class="primary blue landing-btn" onclick="enterAs('admin')">⚙️ INGRESAR COMO ADMIN</button>
   </div>
@@ -710,7 +711,8 @@ init();
    document.getElementById('dname').textContent=cp?cp.name:'--';
    document.getElementById('dsong').textContent=cp?('🎵 '+cp.song):'--';
    document.getElementById('dphoto').innerHTML=cp?photoOf(cp):'🎤';
-   const liveScore=cp?sumFor(cp.id):0;
+   const cpCatSums=cp?catSums(votes,cp.id):[0,0,0,0,0];
+   const liveScore=cpCatSums[0]+cpCatSums[1]+cpCatSums[2]+cpCatSums[3];
    const scoreEl=document.getElementById('dscore');
    if(scoreEl.dataset.prev!==String(liveScore)){scoreEl.style.transform='scale(1.15)';setTimeout(()=>scoreEl.style.transform='scale(1)',220)}
    scoreEl.dataset.prev=String(liveScore);
@@ -718,7 +720,7 @@ init();
 
    const cattableEl=document.getElementById('cattable');
    if(cp){
-     const cs=catSums(votes,cp.id);
+     const cs=cpCatSums;
      cattableEl.innerHTML = cats.map((c,i)=> i<4
        ? `<div class="catrow"><span>${c[0]} ${c[1]}</span><b>${cs[i]}</b></div>`
        : `<div class="catrow secret"><span>${c[0]} ${c[1]}</span><b>❓</b></div>`
@@ -791,6 +793,7 @@ init();
 .final-title{text-align:center;font-size:clamp(28px,4vw,48px);font-weight:1000;color:#ffc42e;text-shadow:0 0 25px #ffc42188;margin-bottom:20px}
 .finaltable{max-width:900px;margin:0 auto}
 .ftrow{display:grid;grid-template-columns:50px 60px 1fr 110px 110px;align-items:center;gap:14px;padding:12px 18px;margin:7px 0;border:1px solid #363a60;border-radius:14px;background:#151934}
+@media(max-width:700px){.ftrow{grid-template-columns:32px 42px 1fr 70px 70px;gap:8px;padding:10px}}
 .ftfirst{border-color:#ffc42e;background:#2b2416;box-shadow:0 0 25px #ffbd2433}
 .ftplace{font-size:clamp(18px,2.4vw,30px);text-align:center;font-weight:900}
 .ftphoto{width:52px;height:52px;border-radius:50%;overflow:hidden;background:#45206d;display:flex;align-items:center;justify-content:center;font-size:24px}
