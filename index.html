@@ -616,6 +616,10 @@ init();
  if(params.get('pantalla')!=='resultados') return;
  document.body.innerHTML=`
  <div class="display">
+   <div class="tv-stats-bar" id="tvStatsBar">
+     <div class="tv-stat">🎤 Faltan <b id="tvPending">--</b> por cantar</div>
+     <div class="tv-stat">🏆 Récord de la noche: <b id="tvRecord">--</b></div>
+   </div>
    <div id="normalView">
    <div class="current-display">
       <div class="display-label">🎙️ PARTICIPANTE EN ESCENA</div>
@@ -623,8 +627,13 @@ init();
       <div id="dname" class="dname">--</div>
       <div id="dsong" class="dsong">--</div>
       <div class="live-score" id="dscore">0<small> pts en vivo</small></div>
+      <div class="dvoters hidden" id="dvoters">👥 0 votos</div>
       <div class="vote-status" id="dstatus">--</div>
       <div class="dcountdown hidden" id="dcountdown">⏱️ --s</div>
+      <div class="hype-wrap" id="hypeWrap">
+        <div class="hype-label">🔥 HYPE</div>
+        <div class="hype-bar"><div class="hype-fill" id="hypeFill" style="width:0%"></div></div>
+      </div>
       <div class="cattable" id="cattable"></div>
    </div>
    </div>
@@ -650,6 +659,7 @@ init();
  const dsb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
  let lastLeaderId=null, firstRun=true, winnerShown=false, lastVotingState=null;
  let tvCountdownEnd=null, tvPrevOpen=null, tvPrevPid=null;
+ let reactionTimestamps=[];
  const idlePhrases=['🔥 ¡La noche está que arde!','🎶 Prepárense para la próxima sorpresa…','👏 ¡Sigan animando desde sus casas!','🏆 ¿Quién se llevará el título esta noche?'];
  function catSums(votes,id){const arr=[0,0,0,0,0];(votes||[]).filter(v=>v.participant_id===id).forEach(v=>{(v.scores||[]).forEach((s,i)=>arr[i]+=Number(s))});return arr}
  function spawnReaction(emoji){
@@ -660,6 +670,15 @@ init();
    el.style.fontSize=(28+Math.random()*30)+'px';
    document.getElementById('reactLayer').appendChild(el);
    setTimeout(()=>el.remove(),3200);
+   reactionTimestamps.push(Date.now());
+ }
+ function updateHypeMeter(){
+   const now=Date.now();
+   reactionTimestamps=reactionTimestamps.filter(t=>now-t<=30000);
+   const count=reactionTimestamps.length;
+   const pct=Math.min(100,count*8);
+   const fillEl=document.getElementById('hypeFill');
+   if(fillEl) fillEl.style.width=pct+'%';
  }
  function spawnComment(name,text){
    const feed=document.getElementById('commentFeed');
@@ -741,6 +760,19 @@ init();
      document.getElementById('finalView').classList.add('hidden');
      document.getElementById('winnerOverlay').classList.add('hidden');
    }
+   // ---- Stats friquis: participantes restantes + récord de la noche ----
+   const allWithScores=parts.map(p=>{
+     const cs=catSums(votes,p.id);
+     const cnt=(votes||[]).filter(v=>v.participant_id===p.id).length;
+     return {p,cs,pub:cs[0]+cs[1]+cs[2]+cs[3],count:cnt};
+   });
+   const pendingCount=allWithScores.filter(x=>x.p.id!==sett?.current_participant_id && x.count===0).length;
+   const tvPendingEl=document.getElementById('tvPending');
+   if(tvPendingEl) tvPendingEl.textContent=pendingCount+'/'+parts.length;
+   const withRecord=allWithScores.filter(x=>x.count>0);
+   const recordHolder=withRecord.length?withRecord.reduce((best,cur)=>cur.pub>best.pub?cur:best):null;
+   const tvRecordEl=document.getElementById('tvRecord');
+   if(tvRecordEl) tvRecordEl.textContent=recordHolder?(recordHolder.p.name+' — '+recordHolder.pub+' pts'):'—';
    const cp=parts.find(p=>p.id===sett?.current_participant_id);
    if(cp){
      document.getElementById('dname').textContent=cp.name;
@@ -769,13 +801,22 @@ init();
    scoreEl.dataset.prev=String(liveScore);
    scoreEl.innerHTML=liveScore.toFixed(0)+'<small> pts en vivo</small>';
    const cattableEl=document.getElementById('cattable');
+   const dvotersEl=document.getElementById('dvoters');
    if(cp){
      const cs=cpCatSums;
+     const cpVoteCount=(votes||[]).filter(v=>v.participant_id===cp.id).length;
+     if(dvotersEl){
+       dvotersEl.textContent='👥 '+cpVoteCount+' voto'+(cpVoteCount===1?'':'s');
+       dvotersEl.classList.remove('hidden');
+     }
      cattableEl.innerHTML = cats.map((c,i)=> i<4
-       ? `<div class="catrow"><span>${c[0]} ${c[1]}</span><b>${cs[i]}</b></div>`
+       ? `<div class="catrow"><span>${c[0]} ${c[1]}</span><b>${cs[i]}<small class="cat-avg"> (${cpVoteCount?(cs[i]/cpVoteCount).toFixed(1):'0.0'} prom)</small></b></div>`
        : `<div class="catrow secret"><span>${c[0]} ${c[1]}</span><b>❓</b></div>`
      ).join('');
-   } else cattableEl.innerHTML='';
+   } else {
+     cattableEl.innerHTML='';
+     if(dvotersEl) dvotersEl.classList.add('hidden');
+   }
    const open=!!(cp && sett?.voting_open);
    const pidNow=cp?cp.id:null;
    if(open && (!tvPrevOpen || pidNow!==tvPrevPid)){
@@ -811,12 +852,16 @@ init();
  refresh(); setInterval(refresh,1500);
  setInterval(()=>{
    const cdEl=document.getElementById('dcountdown');
-   if(!cdEl) return;
-   if(tvCountdownEnd===null){ cdEl.classList.add('hidden'); return; }
-   const remaining=Math.max(0,Math.round((tvCountdownEnd-Date.now())/1000));
-   cdEl.textContent='⏱️ '+remaining+'s';
-   cdEl.classList.remove('hidden');
-   cdEl.classList.toggle('urgent',remaining<=10);
+   if(cdEl){
+     if(tvCountdownEnd===null){ cdEl.classList.add('hidden'); }
+     else{
+       const remaining=Math.max(0,Math.round((tvCountdownEnd-Date.now())/1000));
+       cdEl.textContent='⏱️ '+remaining+'s';
+       cdEl.classList.remove('hidden');
+       cdEl.classList.toggle('urgent',remaining<=10);
+     }
+   }
+   updateHypeMeter();
  },500);
  dsb.channel('fiebre-display')
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'reactions'},payload=>spawnReaction(payload.new.emoji))
@@ -839,6 +884,13 @@ init();
 .dcountdown{margin-top:14px;font-size:clamp(28px,4vw,50px);font-weight:1000;color:#ffc42e;text-shadow:0 0 20px #ffc42188}
 .dcountdown.urgent{color:#ff4545;animation:pulseUrgentTV .6s infinite alternate}
 @keyframes pulseUrgentTV{from{transform:scale(1)}to{transform:scale(1.05)}}
+.tv-stats-bar{position:relative;z-index:2;display:flex;justify-content:center;gap:30px;flex-wrap:wrap;margin-bottom:20px;font-size:clamp(14px,1.6vw,20px);font-weight:800;color:#c9a8ff}
+.tv-stat b{color:#fff}
+.dvoters{margin-top:6px;font-size:clamp(14px,1.8vw,22px);color:#22d9ff;font-weight:800}
+.hype-wrap{max-width:420px;margin:18px auto 0}
+.hype-label{font-size:14px;font-weight:900;color:#ff7a3d;letter-spacing:1px;margin-bottom:6px}
+.hype-bar{height:22px;border-radius:20px;background:#151934;border:1px solid #363a60;overflow:hidden}
+.hype-fill{height:100%;background:linear-gradient(90deg,#ffc42e,#ff7a3d,#ff3fa4);transition:width .4s ease;width:0%}
 .podium{max-width:1000px;margin:10px auto}.drow{display:flex;align-items:center;gap:20px;padding:14px 20px;margin:8px 0;border:1px solid #363a60;border-radius:16px;background:#151934}.dfirst{border-color:#ffc321;background:#2b2416;box-shadow:0 0 25px #ffbd2433}.dplace{font-size:clamp(25px,3vw,45px);width:55px;text-align:center}.davatar{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#45206d;font-size:32px}.dperson{flex:1;font-size:clamp(20px,2.5vw,32px)}.dperson small{display:block;font-size:15px;color:#aaaec9;margin-top:4px}.dpoints{font-size:clamp(28px,4vw,48px);font-weight:1000;color:#cfa7ff}.dpoints small{font-size:15px}.display-footer{text-align:center;margin-top:25px;color:#9296b4;font-size:17px}
 .react-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:150}
 .floatie{position:absolute;bottom:-40px;animation:floatUp 3.2s ease-in forwards}
@@ -863,6 +915,7 @@ init();
 .cattable{max-width:520px;margin:20px auto 0;display:grid;gap:8px}
 .catrow{display:flex;justify-content:space-between;align-items:center;background:#151934cc;border:1px solid #363a60;border-radius:12px;padding:10px 20px;font-size:clamp(15px,1.8vw,22px)}
 .catrow b{color:#20df67;font-size:clamp(18px,2.2vw,26px)}
+.cat-avg{color:#a7aac8;font-size:clamp(11px,1.2vw,15px);font-weight:600}
 .catrow.secret{border-style:dashed;border-color:#ffc42e88}
 .catrow.secret b{color:#ffc42e}
 .final-title{text-align:center;font-size:clamp(28px,4vw,48px);font-weight:1000;color:#ffc42e;text-shadow:0 0 25px #ffc42188;margin-bottom:20px}
