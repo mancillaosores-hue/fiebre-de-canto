@@ -785,17 +785,8 @@ init();
    if(tvRecordEl) tvRecordEl.textContent=recordHolder?(recordHolder.p.name+' — '+recordHolder.pub+' pts'):'—';
    const cp=parts.find(p=>p.id===sett?.current_participant_id);
    if(cp){
-     const cpTrivia=Array.isArray(cp.trivia)?cp.trivia.filter(Boolean):[];
      document.getElementById('dname').textContent=cp.name;
-     if(cpTrivia.length){
-       const liveCycleLen=6000;
-       const liveSlideIdx=Math.floor(Date.now()/liveCycleLen)%(cpTrivia.length+1);
-       document.getElementById('dsong').textContent = liveSlideIdx===0
-         ? '🎵 '+cp.song
-         : '🎲 '+cpTrivia[liveSlideIdx-1];
-     } else {
-       document.getElementById('dsong').textContent='🎵 '+cp.song;
-     }
+     document.getElementById('dsong').textContent='🎵 '+cp.song;
    } else {
      const cycleLen=7000;
      const allTrivia=[];
