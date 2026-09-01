@@ -4,9 +4,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preload" as="image" href="Fotos/file_00000000a910820eb1dac6f19ce10a1b.png" fetchpriority="high">
 <title>Fiebre de Canto Familiar</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <style>
 :root{--bg:#07091c;--panel:#11152f;--panel2:#171b3b;--purple:#7c22d6;--pink:#ff3fa4;--cyan:#22d9ff;--gold:#ffc42e;--green:#20df67;--text:#f6f5ff;--muted:#a7aac8;--danger:#ff4545}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:radial-gradient(circle at 70% 10%,#24104d 0,#07091c 42%,#040510 100%);color:var(--text);min-height:100vh}
@@ -112,7 +111,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </head>
 <body>
 <div id="landing" class="landing">
-  <img class="landing-bgimg" src="Fotos/file_00000000a910820eb1dac6f19ce10a1b.png" alt="">
+  <img class="landing-bgimg" src="Fotos/file_00000000a910820eb1dac6f19ce10a1b.png" alt="" fetchpriority="high" decoding="async">
   <div class="landing-shine"></div>
   <div class="landing-inner-photo">
     <button class="primary green landing-btn" onclick="enterAs('voter')">🎉 INGRESAR COMO VOTANTE</button>
@@ -222,6 +221,8 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
     <div id="thanksText" class="thanks-text"></div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <script>
 const SUPABASE_URL='https://xhvqudltvtfsdnycigjp.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
