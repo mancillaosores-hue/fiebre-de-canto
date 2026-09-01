@@ -537,10 +537,7 @@ async function editTrivia(id){
   const input=prompt('Datos curiosos de '+p.name+' — sepáralos con "|"\nEj: Es de signo Virgo | Le encanta el K-pop', current);
   if(input===null) return;
   const arr=input.split('|').map(s=>s.trim()).filter(Boolean);
-  const {error}=await sb.from('participants').update({trivia:arr}).eq('id',id);
-  if(error){ toast('❌ Error al guardar datos curiosos',true); return; }
-  await loadAll();
-  toast('✅ Datos curiosos guardados');
+  try{ await rpc('admin_update_trivia',{p_id:id,p_trivia:arr}); await loadAll(); toast('✅ Datos curiosos guardados');}catch(e){}
 }
 async function deletePerson(id){
   if(!confirm('¿Eliminar participante y sus votos?'))return;
