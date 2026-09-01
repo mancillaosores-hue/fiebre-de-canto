@@ -19,6 +19,8 @@ main{padding:10px;max-width:1500px;width:100%;margin:auto}.top{display:flex;just
 .quickctrl{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(90deg,#1a103e,#2d0e55);border:1px solid #5a2f9c;border-radius:12px;padding:14px 18px;margin-bottom:16px;flex-wrap:wrap;gap:10px}
 .qc-label{font-size:11px;color:#c9a8ff;font-weight:800;letter-spacing:1px}
 .qc-name{font-size:20px;font-weight:900}
+.qc-idle-row{display:flex;gap:10px;align-items:center;flex:1;flex-wrap:wrap;min-width:260px}
+.qc-idle-row input{flex:1;min-width:200px;background:#0b0f25;border:1px solid #3b3f60;color:#fff;padding:10px 12px;border-radius:8px}
 .reactbar{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:14px}
 .reactbar button{width:52px;height:52px;border-radius:50%;border:2px solid #3b3f60;background:#151934;font-size:24px;cursor:pointer;transition:transform .15s}
 .reactbar button:active{transform:scale(1.3)}
@@ -42,7 +44,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 .score{font-size:19px;font-weight:900;border:1px solid #4a4f75;padding:6px 2px;border-radius:7px;text-align:center;background:#0b0f25;color:#fff;width:46px}
 .total{margin-top:12px;background:#171a36;padding:15px;border-radius:10px;text-align:center}.total b{font-size:34px;color:#caa6ff}.submit{width:100%;margin-top:12px}.notice{text-align:center;color:#8e91ad;font-size:12px;margin-top:9px}.section{margin-top:10px}.section h2{margin:0 0 12px}
 .rank{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid #363a5b;border-radius:9px;margin:7px 0;background:#151934}.rank.first{border-color:#ffc21d;background:#241e16}.place{font-size:23px;font-weight:900;width:34px;text-align:center}.mini{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#242a63,#7525a5);display:flex;align-items:center;justify-content:center;font-size:23px;flex-shrink:0}.rname{flex:1;min-width:0}.points{font-size:20px;font-weight:900}
-.adminrow{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid #333756;border-radius:8px;margin:6px 0;flex-wrap:wrap}.adminrow .rname{min-width:120px}.actions button{border:0;border-radius:6px;padding:8px;margin-left:4px;cursor:pointer}.edit{background:#1675d1;color:#fff}.del{background:#ef3636;color:#fff}.live-btn{background:#20df67;color:#052;font-weight:800}.live-btn.on{background:#ff3030;color:#fff}
+.adminrow{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid #333756;border-radius:8px;margin:6px 0;flex-wrap:wrap}.adminrow.adminrow-live{border-color:#20df67;box-shadow:0 0 15px #20df6744;background:#12241a}.adminrow .rname{min-width:120px}.actions{display:flex;flex-wrap:wrap;align-items:center}.actions button{border:0;border-radius:6px;padding:8px 12px;margin-left:4px;cursor:pointer;font-weight:800}.edit{background:#1675d1;color:#fff;padding:8px !important}.del{background:#ef3636;color:#fff;padding:8px !important}.live-btn{background:#20df67;color:#052;font-weight:800}.live-btn.on{background:#ff3030;color:#fff}.vote-btn{margin-left:4px}.vote-btn.open{background:#08749b;color:#fff}.vote-btn.close{background:#20b957;color:#052}
 .tabs{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}.tabs button{background:#222743;color:#ddd;border:0;padding:9px 14px;border-radius:7px;cursor:pointer}.tabs button.active{background:#7621c9}.hidden{display:none}.form{display:grid;gap:9px;margin-top:12px}.form input{background:#0b0f25;border:1px solid #3b3f60;color:white;padding:11px;border-radius:7px}
 .footer{margin-top:10px;background:linear-gradient(90deg,#1a103e,#2d0e55);padding:10px 25px;border-radius:8px;display:flex;justify-content:space-between;flex-wrap:wrap}.toast{position:fixed;right:20px;bottom:20px;background:#20b957;color:white;padding:14px 18px;border-radius:10px;display:none;font-weight:800;box-shadow:0 10px 30px #0008;z-index:99}.toast.err{background:#d9313f}
 .votetable{width:100%;border-collapse:collapse;font-size:13px}.votetable th,.votetable td{text-align:left;padding:8px;border-bottom:1px solid #2a2e50}
@@ -181,12 +183,15 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </div>
 <div id="plist">
 <div class="quickctrl" id="quickCtrl">
-  <div><div class="qc-label">EN ESCENA AHORA</div><div class="qc-name" id="qcName">— nadie —</div></div>
-  <div id="qcButtons"></div>
+  <div><div class="qc-label">EN ESCENA AHORA</div><div class="qc-name" id="qcName">— nadie en vivo —</div></div>
+  <div id="qcIdleRow" class="qc-idle-row hidden">
+    <input id="idleMsgInput" placeholder="Mensaje para la pantalla mientras no hay nadie en vivo…" maxlength="60">
+    <button class="primary blue" onclick="saveIdleMessage()">💾 Guardar</button>
+  </div>
 </div>
 <div style="display:flex;justify-content:space-between;align-items:center"><b>Lista de participantes</b><button class="primary" onclick="addPerson()">＋ AGREGAR</button></div><div id="adminList"></div><div id="contestClosedNotice" class="notice hidden" style="margin-top:12px">🏁 El concurso está cerrado — ve a la pestaña Configuración para revelar el resultado.</div></div>
 <div id="settingsTab" class="hidden"><div class="form">
-<input id="eventNameInput" placeholder="Nombre del evento">
+<input id="eventNameInput" placeholder="Nombre del evento / mensaje en pantalla sin nadie en vivo">
 <input id="secondsInput" type="number" min="15" placeholder="Segundos de votación">
 <button class="primary" onclick="saveSettings()">GUARDAR CONFIGURACIÓN</button>
 <button class="primary" style="background:#33395c" onclick="resetVotes()">↻ BORRAR TODOS LOS VOTOS</button>
@@ -442,20 +447,31 @@ async function rpc(fn,args){
 function renderAdminList(){
   document.getElementById('adminList').innerHTML=state.participants.map((p,i)=>{
     const isLive=state.settings.current_participant_id===p.id;
-    return `<div class="adminrow"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${miniAvatar(p)}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div>
+    const open=isLive && state.settings.voting_open;
+    const voteBtn = !isLive ? '' : (open
+      ? `<button class="vote-btn close" onclick="closeVoting()">🔒 Cerrar votación</button>`
+      : `<button class="vote-btn open" onclick="reopenVoting()">🗳️ Abrir votación</button>`);
+    return `<div class="adminrow ${isLive?'adminrow-live':''}"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${miniAvatar(p)}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div>
     <div class="actions">
-      <button class="live-btn ${isLive?'on':''}" onclick="setLive(${p.id})">${isLive?'EN VIVO':'Poner en vivo'}</button>
+      <button class="live-btn ${isLive?'on':''}" onclick="setLive(${p.id})">${isLive?'🔴 EN VIVO':'🎤 Poner en vivo'}</button>
+      ${voteBtn}
       <button class="edit" onclick="editPerson(${p.id})">✎</button>
       <button class="del" onclick="deletePerson(${p.id})">🗑</button>
     </div></div>`;
   }).join('')||'<div class="notice">Agrega participantes para comenzar.</div>';
   const cp=currentParticipant();
-  document.getElementById('qcName').textContent=cp?cp.name:'— nadie —';
-  const open=!!(cp && state.settings.voting_open);
-  document.getElementById('qcButtons').innerHTML = !cp ? '' :
-    (open ? `<button class="primary" style="background:#20b957" onclick="closeVoting()">🔒 CERRAR VOTACIÓN</button>`
-          : `<button class="primary blue" onclick="reopenVoting()">🗳️ ABRIR VOTACIÓN</button>`);
+  document.getElementById('qcName').textContent=cp?cp.name:'— nadie en vivo —';
+  const idleRow=document.getElementById('qcIdleRow');
+  idleRow.classList.toggle('hidden',!!cp);
+  if(!cp){
+    const inp=document.getElementById('idleMsgInput');
+    if(document.activeElement!==inp) inp.value=state.settings.event_name||'';
+  }
   document.getElementById('contestClosedNotice').classList.toggle('hidden',!state.settings.contest_closed);
+}
+async function saveIdleMessage(){
+  const val=document.getElementById('idleMsgInput').value.trim()||'La familia está votando';
+  try{ await rpc('admin_update_settings',{p_name:val,p_seconds:state.settings.seconds_per_vote||60}); await loadAll(); toast('✅ Mensaje guardado');}catch(e){}
 }
 async function addPerson(){
   const name=prompt('Nombre del participante:'); if(!name)return;
@@ -659,8 +675,8 @@ init();
      document.getElementById('winnerOverlay').classList.add('hidden');
    }
    const cp=parts.find(p=>p.id===sett?.current_participant_id);
-   document.getElementById('dname').textContent=cp?cp.name:'--';
-   document.getElementById('dsong').textContent=cp?('🎵 '+cp.song):'--';
+   document.getElementById('dname').textContent=cp?cp.name:('🎤 '+(sett?.event_name||'Muy pronto en el escenario…'));
+   document.getElementById('dsong').textContent=cp?('🎵 '+cp.song):'';
    document.getElementById('dphoto').innerHTML=cp?photoOf(cp):'🎤';
    const cpCatSums=cp?catSums(votes,cp.id):[0,0,0,0,0];
    const liveScore=cpCatSums[0]+cpCatSums[1]+cpCatSums[2]+cpCatSums[3];
