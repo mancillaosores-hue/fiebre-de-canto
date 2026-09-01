@@ -44,7 +44,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 .score{font-size:19px;font-weight:900;border:1px solid #4a4f75;padding:6px 2px;border-radius:7px;text-align:center;background:#0b0f25;color:#fff;width:46px}
 .total{margin-top:12px;background:#171a36;padding:15px;border-radius:10px;text-align:center}.total b{font-size:34px;color:#caa6ff}.submit{width:100%;margin-top:12px}.notice{text-align:center;color:#8e91ad;font-size:12px;margin-top:9px}.section{margin-top:10px}.section h2{margin:0 0 12px}
 .rank{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid #363a5b;border-radius:9px;margin:7px 0;background:#151934}.rank.first{border-color:#ffc21d;background:#241e16}.place{font-size:23px;font-weight:900;width:34px;text-align:center}.mini{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#242a63,#7525a5);display:flex;align-items:center;justify-content:center;font-size:23px;flex-shrink:0}.rname{flex:1;min-width:0}.points{font-size:20px;font-weight:900}
-.adminrow{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid #333756;border-radius:8px;margin:6px 0;flex-wrap:wrap}.adminrow.adminrow-live{border-color:#20df67;box-shadow:0 0 15px #20df6744;background:#12241a}.adminrow .rname{min-width:120px}.actions{display:flex;flex-wrap:wrap;align-items:center}.actions button{border:0;border-radius:6px;padding:8px 12px;margin-left:4px;cursor:pointer;font-weight:800}.edit{background:#1675d1;color:#fff;padding:8px !important}.del{background:#ef3636;color:#fff;padding:8px !important}.live-btn{background:#20df67;color:#052;font-weight:800}.live-btn.on{background:#ff3030;color:#fff}.vote-btn{margin-left:4px}.vote-btn.open{background:#08749b;color:#fff}.vote-btn.close{background:#20b957;color:#052}
+.adminrow{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid #333756;border-radius:8px;margin:6px 0;flex-wrap:wrap}.adminrow.adminrow-live{border-color:#20df67;box-shadow:0 0 15px #20df6744;background:#12241a}.adminrow .rname{min-width:120px}.actions{display:flex;flex-wrap:wrap;align-items:center}.actions button{border:0;border-radius:6px;padding:8px 12px;margin-left:4px;cursor:pointer;font-weight:800}.edit{background:#1675d1;color:#fff;padding:8px !important}.del{background:#ef3636;color:#fff;padding:8px !important}.live-btn{background:#20df67;color:#052;font-weight:800}.live-btn.on{background:#ff3030;color:#fff}.vote-btn{margin-left:4px}.vote-btn.open{background:#08749b;color:#fff}.vote-btn.close{background:#20b957;color:#052}.vote-btn.pause{background:#33395c;color:#fff}
 .tabs{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}.tabs button{background:#222743;color:#ddd;border:0;padding:9px 14px;border-radius:7px;cursor:pointer}.tabs button.active{background:#7621c9}.hidden{display:none}.form{display:grid;gap:9px;margin-top:12px}.form input{background:#0b0f25;border:1px solid #3b3f60;color:white;padding:11px;border-radius:7px}
 .footer{margin-top:10px;background:linear-gradient(90deg,#1a103e,#2d0e55);padding:10px 25px;border-radius:8px;display:flex;justify-content:space-between;flex-wrap:wrap}.toast{position:fixed;right:20px;bottom:20px;background:#20b957;color:white;padding:14px 18px;border-radius:10px;display:none;font-weight:800;box-shadow:0 10px 30px #0008;z-index:99}.toast.err{background:#d9313f}
 .votetable{width:100%;border-collapse:collapse;font-size:13px}.votetable th,.votetable td{text-align:left;padding:8px;border-bottom:1px solid #2a2e50}
@@ -454,6 +454,7 @@ function renderAdminList(){
     return `<div class="adminrow ${isLive?'adminrow-live':''}"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${miniAvatar(p)}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div>
     <div class="actions">
       <button class="live-btn ${isLive?'on':''}" onclick="setLive(${p.id})">${isLive?'🔴 EN VIVO':'🎤 Poner en vivo'}</button>
+      ${isLive?'<button class="vote-btn pause" onclick="clearLive()">⏸ Quitar de vivo</button>':''}
       ${voteBtn}
       <button class="edit" onclick="editPerson(${p.id})">✎</button>
       <button class="del" onclick="deletePerson(${p.id})">🗑</button>
@@ -492,6 +493,9 @@ async function deletePerson(id){
 }
 async function setLive(id){
   try{ await rpc('admin_set_current',{p_id:id}); await loadAll(); toast('🎤 Participante en vivo actualizado');}catch(e){}
+}
+async function clearLive(){
+  try{ await rpc('admin_set_current',{p_id:null}); await loadAll(); toast('⏸ Nadie en vivo — pantalla en modo espera');}catch(e){}
 }
 async function saveSettings(){
   const name=document.getElementById('eventNameInput').value;
