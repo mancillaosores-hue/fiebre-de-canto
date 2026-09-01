@@ -105,6 +105,9 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 .commentbox{display:flex;gap:8px;margin-top:12px}
 .commentbox input{flex:1;background:#0b0f25;border:1px solid #3b3f60;color:#fff;padding:10px;border-radius:8px}
 .commentbox button{border:0;background:#7c22d6;color:#fff;border-radius:8px;padding:0 16px;font-weight:900;cursor:pointer}
+.vote-countdown{text-align:center;font-size:22px;font-weight:900;color:#ffc42e;background:#171a36;border-radius:30px;padding:10px 20px;margin-bottom:12px;transition:color .2s}
+.vote-countdown.urgent{color:#ff4545;animation:pulseUrgent .6s infinite alternate}
+@keyframes pulseUrgent{from{transform:scale(1)}to{transform:scale(1.05)}}
 </style>
 </head>
 <body>
@@ -150,6 +153,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <div class="commentbox" id="commentbox"><input id="commentInput" placeholder="Escribe un comentario…" maxlength="140"><button onclick="sendComment()">➤</button></div>
 </div>
 <div class="card" id="votepanel"><h2>🎙️ TU VOTACIÓN</h2>
+<div id="voteCountdown" class="vote-countdown hidden">⏱️ --s para votar</div>
 <div class="notice" id="voteLockedMsg">🔒 La votación aún no está abierta para este participante.</div>
 <div id="votebody" class="hidden">
 <div class="namebox"><input id="voterName" placeholder="Tu nombre o apodo" maxlength="40"><button class="primary blue" id="editNameBtn" style="display:none" onclick="editName()">✎</button></div>
@@ -236,8 +240,12 @@ let ratings=[null,null,null,null,null];
 let touched=[false,false,false,false,false];
 function allTouched(){return touched.every(t=>t)}
 let adminPin=sessionStorage.getItem('fc_admin_pin')||null;
+let voteCountdownEnd=null;
+let autoCloseTriggered=false;
 function toast(t,err){let x=document.getElementById('toast');x.textContent=t;x.className='toast'+(err?' err':'');x.style.display='block';setTimeout(()=>x.style.display='none',2500)}
 async function loadAll(){
+  const prevOpen = !!state.settings?.voting_open;
+  const prevPid = state.settings?.current_participant_id ?? null;
   const [{data:parts},{data:sett},{data:votes}] = await Promise.all([
     sb.from('participants').select('*').order('position'),
     sb.from('settings').select('*').eq('id',1).single(),
@@ -246,7 +254,40 @@ async function loadAll(){
   state.participants=parts||[];
   state.settings=sett||{};
   state.votes=votes||[];
+  handleVotingTimer(prevOpen, prevPid);
   renderAll();
+}
+function handleVotingTimer(prevOpen, prevPid){
+  const nowOpen=!!state.settings.voting_open;
+  const pid=state.settings.current_participant_id ?? null;
+  if(nowOpen && (!prevOpen || pid!==prevPid)){
+    const secs=Number(state.settings.seconds_per_vote)||60;
+    voteCountdownEnd=Date.now()+secs*1000;
+    autoCloseTriggered=false;
+  }
+  if(!nowOpen){
+    voteCountdownEnd=null;
+  }
+}
+function updateCountdown(){
+  const el=document.getElementById('voteCountdown');
+  if(!el) return;
+  if(voteCountdownEnd===null){
+    el.classList.add('hidden');
+    return;
+  }
+  const remaining=Math.max(0,Math.round((voteCountdownEnd-Date.now())/1000));
+  el.classList.remove('hidden');
+  el.textContent='⏱️ '+remaining+'s para votar';
+  el.classList.toggle('urgent',remaining<=10);
+  if(remaining<=0){
+    voteCountdownEnd=null;
+    el.classList.add('hidden');
+    if(isAdmin && adminPin && !autoCloseTriggered){
+      autoCloseTriggered=true;
+      closeVoting();
+    }
+  }
 }
 function currentParticipant(){return state.participants.find(p=>p.id===state.settings.current_participant_id)}
 function miniAvatar(p){return p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji}
@@ -314,6 +355,7 @@ function renderCurrent(){
 }
 function tick(){
   document.getElementById('clock').textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+  updateCountdown();
 }
 setInterval(tick,500);
 function renderRatings(){
@@ -582,12 +624,15 @@ init();
       <div id="dsong" class="dsong">--</div>
       <div class="live-score" id="dscore">0<small> pts en vivo</small></div>
       <div class="vote-status" id="dstatus">--</div>
+      <div class="dcountdown hidden" id="dcountdown">⏱️ --s</div>
       <div class="cattable" id="cattable"></div>
    </div>
    </div>
    <div id="finalView" class="hidden">
      <div class="final-title">🏁 TABLA FINAL</div>
      <div id="finalTable" class="finaltable"></div>
+     <div class="awards-title">🏅 PREMIOS DE LA NOCHE</div>
+     <div id="awardsGrid" class="awards-grid"></div>
    </div>
    <div id="commentFeed" class="comment-feed"></div>
    <div class="display-footer">❤️ Gracias por participar · Los resultados se actualizan automáticamente</div>
@@ -604,6 +649,8 @@ init();
  const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
  const dsb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
  let lastLeaderId=null, firstRun=true, winnerShown=false, lastVotingState=null;
+ let tvCountdownEnd=null, tvPrevOpen=null, tvPrevPid=null;
+ const idlePhrases=['🔥 ¡La noche está que arde!','🎶 Prepárense para la próxima sorpresa…','👏 ¡Sigan animando desde sus casas!','🏆 ¿Quién se llevará el título esta noche?'];
  function catSums(votes,id){const arr=[0,0,0,0,0];(votes||[]).filter(v=>v.participant_id===id).forEach(v=>{(v.scores||[]).forEach((s,i)=>arr[i]+=Number(s))});return arr}
  function spawnReaction(emoji){
    const el=document.createElement('div');
@@ -649,7 +696,7 @@ init();
        const cs=catSums(votes,p.id);
        const pub=cs[0]+cs[1]+cs[2]+cs[3];
        const sec=cs[4];
-       return {p,pub,sec,real:pub+sec};
+       return {p,cs,pub,sec,real:pub+sec};
      });
      const sorted=[...withScores].sort((a,b)=> revealed ? b.real-a.real : b.pub-a.pub);
      document.getElementById('finalTable').innerHTML=sorted.map((row,i)=>`
@@ -660,6 +707,22 @@ init();
          <div class="ftpub">${row.pub}<small> pts</small></div>
          <div class="ftsecret ${revealed?'revealed':''}">${revealed?row.sec+' pts':'❓'}</div>
        </div>`).join('');
+     const leaderFor=idx=>withScores.reduce((best,cur)=>(cur.cs[idx]>0 && (!best||cur.cs[idx]>best.cs[idx]))?cur:best,null);
+     const awardDefs=[
+       {icon:'🎤',label:'Voz de Oro',idx:0},
+       {icon:'💖',label:'Mejor Interpretación',idx:1},
+       {icon:'⚡',label:'Más Desplante',idx:2},
+       {icon:'💃',label:'Más Show',idx:3}
+     ];
+     let awardsHtml=awardDefs.map(a=>{
+       const w=leaderFor(a.idx);
+       return w?`<div class="award-card"><div class="award-icon">${a.icon}</div><div class="award-label">${a.label}</div><div class="award-name">${w.p.name}</div><div class="award-score">${w.cs[a.idx]} pts</div></div>`:'';
+     }).join('');
+     if(revealed){
+       const w5=leaderFor(4);
+       if(w5) awardsHtml+=`<div class="award-card secret-award"><div class="award-icon">😊</div><div class="award-label">Más Entretenido (secreto)</div><div class="award-name">${w5.p.name}</div><div class="award-score">${w5.cs[4]} pts</div></div>`;
+     }
+     document.getElementById('awardsGrid').innerHTML=awardsHtml;
      const winEl=document.getElementById('winnerOverlay');
      if(revealed && sorted.length){
        const w=sorted[0];
@@ -679,8 +742,25 @@ init();
      document.getElementById('winnerOverlay').classList.add('hidden');
    }
    const cp=parts.find(p=>p.id===sett?.current_participant_id);
-   document.getElementById('dname').textContent=cp?cp.name:('🎤 '+(sett?.event_name||'Muy pronto en el escenario…'));
-   document.getElementById('dsong').textContent=cp?('🎵 '+cp.song):'';
+   if(cp){
+     document.getElementById('dname').textContent=cp.name;
+     document.getElementById('dsong').textContent='🎵 '+cp.song;
+   } else {
+     const cycleLen=7000;
+     const slideIdx=Math.floor(Date.now()/cycleLen)%3;
+     if(slideIdx===0){
+       document.getElementById('dname').textContent='🎤 '+(sett?.event_name||'Muy pronto en el escenario…');
+       document.getElementById('dsong').textContent='';
+     } else if(slideIdx===1){
+       const topList=[...parts].sort((a,b)=>sumFor(b.id)-sumFor(a.id)).slice(0,3);
+       document.getElementById('dname').textContent='📊 RANKING PARCIAL';
+       document.getElementById('dsong').textContent=topList.length?topList.map((p,i)=>(i===0?'🥇':i===1?'🥈':'🥉')+' '+p.name).join('   '):'Aún sin votos';
+     } else {
+       const phrase=idlePhrases[Math.floor(Date.now()/(cycleLen*3))%idlePhrases.length];
+       document.getElementById('dname').textContent=phrase;
+       document.getElementById('dsong').textContent='';
+     }
+   }
    document.getElementById('dphoto').innerHTML=cp?photoOf(cp):'🎤';
    const cpCatSums=cp?catSums(votes,cp.id):[0,0,0,0,0];
    const liveScore=cpCatSums[0]+cpCatSums[1]+cpCatSums[2]+cpCatSums[3];
@@ -697,6 +777,23 @@ init();
      ).join('');
    } else cattableEl.innerHTML='';
    const open=!!(cp && sett?.voting_open);
+   const pidNow=cp?cp.id:null;
+   if(open && (!tvPrevOpen || pidNow!==tvPrevPid)){
+     const secs=Number(sett?.seconds_per_vote)||60;
+     tvCountdownEnd=Date.now()+secs*1000;
+   }
+   if(!open){ tvCountdownEnd=null; }
+   tvPrevOpen=open; tvPrevPid=pidNow;
+   const cdEl=document.getElementById('dcountdown');
+   if(tvCountdownEnd!==null){
+     const remaining=Math.max(0,Math.round((tvCountdownEnd-Date.now())/1000));
+     cdEl.textContent='⏱️ '+remaining+'s';
+     cdEl.classList.remove('hidden');
+     cdEl.classList.toggle('urgent',remaining<=10);
+   } else {
+     cdEl.classList.add('hidden');
+   }
+   /* keyframe uses pulseUrgentTV to avoid name clash with main style block */
    const stateKey=cp?cp.id+':'+open:null;
    if(cp && lastVotingState!==null && lastVotingState===cp.id+':true' && !open){
      playSuccess();
@@ -712,6 +809,15 @@ init();
    statusEl.style.color = '#fff';
  }
  refresh(); setInterval(refresh,1500);
+ setInterval(()=>{
+   const cdEl=document.getElementById('dcountdown');
+   if(!cdEl) return;
+   if(tvCountdownEnd===null){ cdEl.classList.add('hidden'); return; }
+   const remaining=Math.max(0,Math.round((tvCountdownEnd-Date.now())/1000));
+   cdEl.textContent='⏱️ '+remaining+'s';
+   cdEl.classList.remove('hidden');
+   cdEl.classList.toggle('urgent',remaining<=10);
+ },500);
  dsb.channel('fiebre-display')
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'reactions'},payload=>spawnReaction(payload.new.emoji))
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'comments'},payload=>spawnComment(payload.new.voter_name,payload.new.text))
@@ -730,6 +836,9 @@ init();
 .current-display{text-align:center;padding:25px 10px 18px}.display-label{font-size:20px;color:#d2a2ff;font-weight:900}.dname{font-size:clamp(38px,6vw,90px);font-weight:1000;margin:5px}.dsong{font-size:clamp(18px,2.5vw,32px);color:#c6c8df}
 .live-score{font-size:clamp(40px,7vw,90px);font-weight:1000;color:#20df67;text-shadow:0 0 20px #20df6788;transition:transform .2s ease;display:inline-block}
 .live-score small{font-size:clamp(14px,1.6vw,22px);color:#bfc2df;font-weight:700}.vote-status{display:inline-block;background:#16b954;border-radius:40px;padding:12px 30px;font-size:clamp(20px,3vw,35px);font-weight:1000}
+.dcountdown{margin-top:14px;font-size:clamp(28px,4vw,50px);font-weight:1000;color:#ffc42e;text-shadow:0 0 20px #ffc42188}
+.dcountdown.urgent{color:#ff4545;animation:pulseUrgentTV .6s infinite alternate}
+@keyframes pulseUrgentTV{from{transform:scale(1)}to{transform:scale(1.05)}}
 .podium{max-width:1000px;margin:10px auto}.drow{display:flex;align-items:center;gap:20px;padding:14px 20px;margin:8px 0;border:1px solid #363a60;border-radius:16px;background:#151934}.dfirst{border-color:#ffc321;background:#2b2416;box-shadow:0 0 25px #ffbd2433}.dplace{font-size:clamp(25px,3vw,45px);width:55px;text-align:center}.davatar{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#45206d;font-size:32px}.dperson{flex:1;font-size:clamp(20px,2.5vw,32px)}.dperson small{display:block;font-size:15px;color:#aaaec9;margin-top:4px}.dpoints{font-size:clamp(28px,4vw,48px);font-weight:1000;color:#cfa7ff}.dpoints small{font-size:15px}.display-footer{text-align:center;margin-top:25px;color:#9296b4;font-size:17px}
 .react-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:150}
 .floatie{position:absolute;bottom:-40px;animation:floatUp 3.2s ease-in forwards}
@@ -757,6 +866,14 @@ init();
 .catrow.secret{border-style:dashed;border-color:#ffc42e88}
 .catrow.secret b{color:#ffc42e}
 .final-title{text-align:center;font-size:clamp(28px,4vw,48px);font-weight:1000;color:#ffc42e;text-shadow:0 0 25px #ffc42188;margin-bottom:20px}
+.awards-title{text-align:center;font-size:clamp(22px,3vw,36px);font-weight:1000;color:#22d9ff;text-shadow:0 0 20px #22d9ff88;margin:35px 0 16px}
+.awards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;max-width:900px;margin:0 auto}
+.award-card{background:#151934;border:1px solid #363a60;border-radius:16px;padding:16px;text-align:center}
+.award-card.secret-award{border-color:#ffc42e;background:#2b2416}
+.award-icon{font-size:36px}
+.award-label{font-size:14px;color:#bfc2df;margin-top:6px;font-weight:800}
+.award-name{font-size:20px;font-weight:1000;margin-top:4px}
+.award-score{font-size:14px;color:#20df67;margin-top:2px}
 .finaltable{max-width:900px;margin:0 auto}
 .ftrow{display:grid;grid-template-columns:50px 60px 1fr 110px 110px;align-items:center;gap:14px;padding:12px 18px;margin:7px 0;border:1px solid #363a60;border-radius:14px;background:#151934}
 @media(max-width:700px){.ftrow{grid-template-columns:32px 42px 1fr 70px 70px;gap:8px;padding:10px}}
