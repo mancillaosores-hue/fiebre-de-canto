@@ -79,13 +79,12 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 @keyframes shineSweep{0%{transform:translateX(-120%) rotate(8deg)}100%{transform:translateX(120%) rotate(8deg)}}
 .landing{position:fixed;inset:0;z-index:400;display:flex;align-items:flex-end;justify-content:center;text-align:center;overflow:hidden;background:#050612}
 .landing.hidden{display:none}
-.landing-photo{background-image:url('Fotos/file_00000000a910820eb1dac6f19ce10a1b.png');background-size:cover;background-position:center}
-.landing-shine{position:absolute;top:0;left:0;width:60%;height:200%;background:linear-gradient(90deg,transparent,#fff3,transparent);animation:shineSweep 4.5s ease-in-out infinite;pointer-events:none}
+.landing-bgimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;display:block}
+.landing-shine{position:absolute;top:0;left:0;width:60%;height:200%;background:linear-gradient(90deg,transparent,#fff3,transparent);animation:shineSweep 4.5s ease-in-out infinite;pointer-events:none;z-index:1}
 .landing-inner-photo{animation:landingIn .8s ease both;position:relative;z-index:2;width:100%;padding:0 24px 44px;background:linear-gradient(to top,#050612ee 10%,#05061299 55%,transparent 100%);padding-top:90px}
 .landing-btn{display:block;width:300px;max-width:82vw;margin:12px auto;padding:17px;font-size:16px}
 @media(min-width:700px){
-  .landing-photo{background-size:contain;background-repeat:no-repeat;background-color:#050612}
-  .landing-photo::before{content:'';position:absolute;inset:0;background-image:inherit;background-size:cover;background-position:center;filter:blur(35px) brightness(.45);z-index:0}
+  .landing-bgimg{object-fit:contain}
 }
 
 /* ===== Roster de participantes ===== */
@@ -108,7 +107,8 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </style>
 </head>
 <body>
-<div id="landing" class="landing landing-photo">
+<div id="landing" class="landing">
+  <img class="landing-bgimg" src="Fotos/file_00000000a910820eb1dac6f19ce10a1b.png" alt="">
   <div class="landing-shine"></div>
   <div class="landing-inner-photo">
     <button class="primary green landing-btn" onclick="enterAs('voter')">🎉 INGRESAR COMO VOTANTE</button>
@@ -746,7 +746,7 @@ init();
 })();
 </script>
 <style>
-.display{min-height:100vh;padding:30px 5vw;background:radial-gradient(circle at 50% 0,#42117b,#08091c 55%);color:white}
+.display{min-height:100vh;padding:30px 5vw;color:white;position:relative;overflow:hidden;background-color:#08091c;background-image:linear-gradient(rgba(8,9,28,.55),rgba(8,9,28,.55)),radial-gradient(circle at 50% 0,#42117b99,transparent 60%),url('Fotos/file_00000000a910820eb1dac6f19ce10a1b.png');background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed}
 .display-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #45476b;padding-bottom:20px}
 .display-title{font-size:clamp(28px,4vw,60px);font-weight:1000;text-shadow:0 0 18px #a82aff}
 .display-title span{color:#ff42ae}.display-sub{font-size:clamp(16px,2vw,28px);color:#bfc2df;margin-top:5px}.display-clock{font-size:clamp(25px,4vw,55px);font-weight:900;color:#ffc321}
@@ -769,7 +769,6 @@ init();
 @keyframes spinRingBig{to{transform:rotate(360deg)}}
 @keyframes twinkle{0%,100%{opacity:.1;transform:scale(.7)}50%{opacity:.9;transform:scale(1.3)}}
 @keyframes titleShimmer{0%{background-position:0% 50%}100%{background-position:200% 50%}}
-.display{position:relative;overflow:hidden;background-image:linear-gradient(rgba(8,9,28,.6),rgba(8,9,28,.6)),radial-gradient(circle at 50% 0,#42117b,#08091c 55%),url('Fotos/file_00000000a910820eb1dac6f19ce10a1b.png');background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed}
 .display::before{content:'';position:absolute;inset:0;background-image:radial-gradient(2px 2px at 10% 20%,#fff,transparent),radial-gradient(2px 2px at 80% 15%,#fff,transparent),radial-gradient(1.5px 1.5px at 30% 70%,#fff,transparent),radial-gradient(2px 2px at 60% 85%,#fff,transparent),radial-gradient(1.5px 1.5px at 90% 60%,#fff,transparent),radial-gradient(2px 2px at 45% 40%,#fff,transparent);opacity:.5;pointer-events:none;animation:twinkle 3s ease-in-out infinite}
 .display-title{background:linear-gradient(90deg,#fff,#22d9ff,#ff3fa4,#fff);background-size:300% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:titleShimmer 4s linear infinite}
 .dphoto{position:relative}
