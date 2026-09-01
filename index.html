@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -73,7 +74,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 .numchip{position:absolute;top:-6px;left:-6px;background:var(--pcolor);color:#0a0a1a;font-weight:900;font-size:14px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #0d1029;z-index:2}
 @keyframes popIn{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
 .checkbadge{position:absolute;bottom:2px;right:2px;background:#20df67;color:#052;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;border:3px solid #0a0a1a;animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both}
-
 /* ===== Landing con foto de fondo ===== */
 @keyframes landingIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
 @keyframes shineSweep{0%{transform:translateX(-120%) rotate(8deg)}100%{transform:translateX(120%) rotate(8deg)}}
@@ -86,7 +86,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 @media(min-width:700px){
   .landing-bgimg{object-fit:contain}
 }
-
 /* ===== Roster de participantes ===== */
 .rosterrow{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:1px solid #333756;background:#151934;margin:8px 0}
 .rosterrow.ropen{border-color:#20df67;box-shadow:0 0 20px #20df6744}
@@ -117,7 +116,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </div>
 <div class="app">
 <aside class="side">
-<div class="logo"><img src="Fotos/file_00000000a910820eb1dac6f19ce10a1b.png" alt="Fiebre de Canto Familiar"></div>
 <nav>
 <button class="active" onclick="show('live',this)">🏠 Votar</button>
 <button id="navResults" class="hidden" onclick="show('results',this)">📊 Resultados</button>
@@ -129,7 +127,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </aside>
 <main>
 <header class="top"><div><div class="live">EN VIVO <i></i></div><div class="sub" id="eventName">La familia está votando</div></div><div class="stats"><div class="stat">👨‍👩‍👧‍👦 Votantes <b id="voters">0</b></div><div class="stat">🕒 Hora <b id="clock">--:--</b></div></div></header>
-
 <section id="live" class="page">
 <div class="card">
 <h2>🎶 ORDEN DE PARTICIPANTES</h2>
@@ -167,10 +164,8 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <div class="card"><h2>👥 Votantes de este participante</h2><div id="voterListLive" class="notice">—</div></div>
 </div>
 </section>
-
 <section id="results" class="page hidden"><div class="card"><h1>🏆 Resultados finales</h1><p class="sub">Ranking según la suma de todos los votos recibidos.</p><div id="bigRanking"></div></div></section>
 <section id="people" class="page hidden"><div class="card"><h1>👥 Participantes</h1><div id="peopleList"></div></div></section>
-
 <section id="admin" class="page hidden">
 <div class="card">
 <h1>⚙️ Administración</h1>
@@ -208,9 +203,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </div>
 </div>
 </section>
-
 <section id="help" class="page hidden"><div class="card"><h1>ℹ️ Cómo funciona</h1><ol><li>Cada participante interpreta una canción.</li><li>El administrador marca quién está "en vivo" en la pestaña Admin.</li><li>El público escribe su nombre y califica de 1 a 10 en cinco categorías (deslizando o escribiendo el número).</li><li>Cada persona vota una sola vez por cada participante (se identifica por su nombre).</li><li>Los votos se suman en tiempo real entre todos los celulares conectados.</li><li>El administrador puede agregar, editar y eliminar participantes con su PIN.</li></ol><p><b>Pantalla grande:</b> abre este mismo archivo agregando <code>?pantalla=resultados</code> al final del link para mostrar el ranking en un TV o proyector.</p></div></section>
-
 <div class="footer">🎵 ¡Que gane el mejor! 🎤 <span>Fiebre de Canto Familiar ❤️</span></div>
 </main></div><div id="toast" class="toast"></div>
 <div id="thanksOverlay" class="thanks-overlay hidden" onclick="this.classList.add('hidden')">
@@ -220,12 +213,10 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
     <div id="thanksText" class="thanks-text"></div>
   </div>
 </div>
-
 <script>
 const SUPABASE_URL='https://xhvqudltvtfsdnycigjp.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-
 // ---- Sonido y vibración (sin archivos externos) ----
 let _actx=null;
 function actx(){if(!_actx)_actx=new (window.AudioContext||window.webkitAudioContext)();return _actx}
@@ -235,15 +226,12 @@ function playSuccess(){try{beep(523,110,0);beep(659,110,0.09);beep(784,160,0.18)
 function playApplause(){try{const c=actx();for(let i=0;i<26;i++){const t=Math.random()*0.6;const buf=c.createBuffer(1,c.sampleRate*0.05,c.sampleRate);const d=buf.getChannelData(0);for(let j=0;j<d.length;j++)d[j]=(Math.random()*2-1)*(1-j/d.length);const src=c.createBufferSource();src.buffer=buf;const g=c.createGain();g.gain.value=0.05+Math.random()*0.05;src.connect(g);g.connect(c.destination);src.start(c.currentTime+t)}}catch(e){}}
 function vib(pattern){try{navigator.vibrate&&navigator.vibrate(pattern)}catch(e){}}
 const cats=[['🎵','Voz'],['❤️','Interpretación'],['⚡','Desplante'],['💃','Show'],['😊','Entretenimiento']];
-
 let state={participants:[],settings:{},votes:[]};
 let ratings=[null,null,null,null,null];
 let touched=[false,false,false,false,false];
 function allTouched(){return touched.every(t=>t)}
 let adminPin=sessionStorage.getItem('fc_admin_pin')||null;
-
 function toast(t,err){let x=document.getElementById('toast');x.textContent=t;x.className='toast'+(err?' err':'');x.style.display='block';setTimeout(()=>x.style.display='none',2500)}
-
 async function loadAll(){
   const [{data:parts},{data:sett},{data:votes}] = await Promise.all([
     sb.from('participants').select('*').order('position'),
@@ -255,13 +243,11 @@ async function loadAll(){
   state.votes=votes||[];
   renderAll();
 }
-
 function currentParticipant(){return state.participants.find(p=>p.id===state.settings.current_participant_id)}
 function miniAvatar(p){return p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji}
 function votesFor(id){return state.votes.filter(v=>v.participant_id===id)}
 function sumFor(id){return votesFor(id).reduce((a,v)=>a+Number(v.total),0)}
 function hasVoted(id,name){const key=(name||'').trim().toLowerCase();const dev=deviceId();return votesFor(id).some(v=>v.voter_name_key===key||v.device_id===dev)}
-
 function renderAll(){
   document.getElementById('eventName').textContent=state.settings.event_name||'La familia está votando';
   document.getElementById('voters').textContent=new Set(state.votes.map(v=>v.voter_name_key)).size;
@@ -274,7 +260,6 @@ function renderAll(){
   renderVotersTable();
   renderLiveVoterList();
 }
-
 function renderRoster(){
   const cp=currentParticipant();
   document.getElementById('rosterList').innerHTML = state.participants.map((p,i)=>{
@@ -295,7 +280,6 @@ function renderRoster(){
   }).join('') || '<div class="notice">Aún no hay participantes.</div>';
 }
 function scrollToVote(){document.getElementById('votepanel').scrollIntoView({behavior:'smooth',block:'start'})}
-
 let lastLiveId=null;
 const PALETTE=['#ff3fa4','#22d9ff','#ffc42e','#20df67','#7c22d6','#ff7a3d','#3fa9ff','#ff4d6d'];
 function colorFor(id){return PALETTE[(id||0)%PALETTE.length]}
@@ -323,12 +307,10 @@ function renderCurrent(){
     document.querySelector('#adminVoteControls button:nth-child(2)').style.display=open?'none':'inline-block';
   }
 }
-
 function tick(){
   document.getElementById('clock').textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
 }
 setInterval(tick,500);
-
 function renderRatings(){
   document.getElementById('ratings').innerHTML=cats.map((c,i)=>{
     const val=ratings[i];
@@ -342,7 +324,6 @@ function renderRatings(){
   document.getElementById('submitBtn').disabled = !currentParticipant() || !state.settings.voting_open || !allTouched();
 }
 function rate(i,v){v=Math.max(1,Math.min(10,Math.round(Number(v)||1)));ratings[i]=v;touched[i]=true;playClick();vib(15);renderRatings()}
-
 async function submitVote(){
   const p=currentParticipant();
   if(!p) return toast('Aún no hay participante en vivo',true);
@@ -397,18 +378,15 @@ async function sendComment(){
 function deviceId(){let id=localStorage.getItem('fc_device');if(!id){id='D'+Math.random().toString(36).slice(2);localStorage.setItem('fc_device',id)}return id}
 function lockName(){document.getElementById('voterName').readOnly=true;document.getElementById('editNameBtn').style.display='inline-block'}
 function editName(){document.getElementById('voterName').readOnly=false;document.getElementById('voterName').focus()}
-
 function renderRanking(){
   const list=[...state.participants].sort((a,b)=>sumFor(b.id)-sumFor(a.id));
   const rowHtml=(p,i,big)=>`<div class="rank ${i===0?'first':''}"><div class="place">${big?(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1):i+1}</div><div class="mini">${miniAvatar(p)}</div><div class="rname"><b>${p.name}</b><div class="sub">${votesFor(p.id).length} votos</div></div><div class="points">${sumFor(p.id).toFixed(0)} pts</div></div>`;
   document.getElementById('ranking').innerHTML=list.map((p,i)=>rowHtml(p,i,false)).join('')||'<div class="notice">Aún no hay participantes.</div>';
   document.getElementById('bigRanking').innerHTML=list.map((p,i)=>rowHtml(p,i,true)).join('')||'<div class="notice">Aún no hay participantes.</div>';
 }
-
 function renderPeople(){
   document.getElementById('peopleList').innerHTML=state.participants.map((p,i)=>`<div class="rank"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${miniAvatar(p)}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div></div>`).join('')||'<div class="notice">Aún no hay participantes.</div>';
 }
-
 function renderLiveVoterList(){
   const p=currentParticipant();
   const el=document.getElementById('voterListLive');
@@ -416,7 +394,6 @@ function renderLiveVoterList(){
   const names=votesFor(p.id).map(v=>v.voter_name);
   el.textContent=names.length?names.join(', '):'Nadie ha votado todavía por este participante.';
 }
-
 function renderVotersTable(){
   const rows=[...state.votes].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(v=>{
     const p=state.participants.find(x=>x.id===v.participant_id);
@@ -424,7 +401,6 @@ function renderVotersTable(){
   }).join('');
   document.getElementById('votersBody').innerHTML=rows||'<tr><td colspan="4" class="notice">Sin votos aún.</td></tr>';
 }
-
 // ---- Navegación ----
 function show(id,btn){
   document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));
@@ -437,7 +413,6 @@ function adminTab(id,btn){
   document.querySelectorAll('#admin .tabs button').forEach(x=>x.classList.remove('active'));
   btn.classList.add('active');
 }
-
 // ---- Admin ----
 let isAdmin=false;
 function revealAdminUI(){
@@ -459,13 +434,11 @@ async function unlockAdmin(){
   adminPin=pin; sessionStorage.setItem('fc_admin_pin',pin);
   revealAdminUI();
 }
-
 async function rpc(fn,args){
   const {data,error}=await sb.rpc(fn,{p_pin:adminPin,...args});
   if(error){toast('❌ '+(error.message||'Error'),true);throw error}
   return data;
 }
-
 function renderAdminList(){
   document.getElementById('adminList').innerHTML=state.participants.map((p,i)=>{
     const isLive=state.settings.current_participant_id===p.id;
@@ -476,7 +449,6 @@ function renderAdminList(){
       <button class="del" onclick="deletePerson(${p.id})">🗑</button>
     </div></div>`;
   }).join('')||'<div class="notice">Agrega participantes para comenzar.</div>';
-
   const cp=currentParticipant();
   document.getElementById('qcName').textContent=cp?cp.name:'— nadie —';
   const open=!!(cp && state.settings.voting_open);
@@ -485,7 +457,6 @@ function renderAdminList(){
           : `<button class="primary blue" onclick="reopenVoting()">🗳️ ABRIR VOTACIÓN</button>`);
   document.getElementById('contestClosedNotice').classList.toggle('hidden',!state.settings.contest_closed);
 }
-
 async function addPerson(){
   const name=prompt('Nombre del participante:'); if(!name)return;
   const song=prompt('Canción:')||'Canción pendiente';
@@ -539,7 +510,6 @@ async function changePin(){
   if(!np) return;
   try{ await rpc('admin_change_pin',{p_old_pin:adminPin,p_new_pin:np}); adminPin=np; sessionStorage.setItem('fc_admin_pin',np); toast('✅ PIN actualizado'); document.getElementById('newPin1').value='';}catch(e){}
 }
-
 // ---- Tiempo real ----
 sb.channel('fiebre-de-canto')
  .on('postgres_changes',{event:'*',schema:'public',table:'participants'},loadAll)
@@ -547,7 +517,6 @@ sb.channel('fiebre-de-canto')
  .on('postgres_changes',{event:'*',schema:'public',table:'settings'},loadAll)
  .on('postgres_changes',{event:'*',schema:'public',table:'comments'},()=>{})
  .subscribe();
-
 function enterAs(role){
   sessionStorage.setItem('fc_role',role);
   document.getElementById('landing').classList.add('hidden');
@@ -560,7 +529,6 @@ function enterAs(role){
     show('live');
   }
 }
-
 async function init(){
   const savedName=localStorage.getItem('fc_voter_name')||'';
   document.getElementById('voterName').value=savedName;
@@ -579,7 +547,6 @@ async function init(){
 }
 init();
 </script>
-
 <script>
 /* Pantalla gigante: abre este mismo archivo con ?pantalla=resultados */
 (function(){
@@ -613,14 +580,11 @@ init();
    <div class="winner-points" id="winnerPoints">0 pts</div>
  </div>`;
  document.body.classList.add('big-mode');
-
  const SUPABASE_URL='https://xhvqudltvtfsdnycigjp.supabase.co';
  const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
  const dsb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
  let lastLeaderId=null, firstRun=true, winnerShown=false, lastVotingState=null;
-
  function catSums(votes,id){const arr=[0,0,0,0,0];(votes||[]).filter(v=>v.participant_id===id).forEach(v=>{(v.scores||[]).forEach((s,i)=>arr[i]+=Number(s))});return arr}
-
  function spawnReaction(emoji){
    const el=document.createElement('div');
    el.className='floatie';
@@ -639,7 +603,6 @@ init();
    while(feed.children.length>5) feed.removeChild(feed.lastChild);
    setTimeout(()=>el.remove(),9000);
  }
-
  async function refresh(){
    const [{data:parts},{data:sett},{data:votes}]=await Promise.all([
      dsb.from('participants').select('*').order('position'),
@@ -649,7 +612,6 @@ init();
    if(!parts) return;
    const sumFor=id=>(votes||[]).filter(v=>v.participant_id===id).reduce((a,v)=>a+Number(v.total),0);
    const list=[...parts].sort((a,b)=>sumFor(b.id)-sumFor(a.id));
-
    if(!sett?.contest_closed && list.length && list[0] && sumFor(list[0].id)>0){
      if(!firstRun && lastLeaderId!==null && list[0].id!==lastLeaderId){
        playApplause();
@@ -658,9 +620,7 @@ init();
      lastLeaderId=list[0].id;
    }
    firstRun=false;
-
    const photoOf=x=>x.photo_url?`<img src="${x.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:x.emoji;
-
    if(sett?.contest_closed){
      document.getElementById('normalView').classList.add('hidden');
      document.getElementById('finalView').classList.remove('hidden');
@@ -680,7 +640,6 @@ init();
          <div class="ftpub">${row.pub}<small> pts</small></div>
          <div class="ftsecret ${revealed?'revealed':''}">${revealed?row.sec+' pts':'❓'}</div>
        </div>`).join('');
-
      const winEl=document.getElementById('winnerOverlay');
      if(revealed && sorted.length){
        const w=sorted[0];
@@ -699,7 +658,6 @@ init();
      document.getElementById('finalView').classList.add('hidden');
      document.getElementById('winnerOverlay').classList.add('hidden');
    }
-
    const cp=parts.find(p=>p.id===sett?.current_participant_id);
    document.getElementById('dname').textContent=cp?cp.name:'--';
    document.getElementById('dsong').textContent=cp?('🎵 '+cp.song):'--';
@@ -710,7 +668,6 @@ init();
    if(scoreEl.dataset.prev!==String(liveScore)){scoreEl.style.transform='scale(1.15)';setTimeout(()=>scoreEl.style.transform='scale(1)',220)}
    scoreEl.dataset.prev=String(liveScore);
    scoreEl.innerHTML=liveScore.toFixed(0)+'<small> pts en vivo</small>';
-
    const cattableEl=document.getElementById('cattable');
    if(cp){
      const cs=cpCatSums;
@@ -719,7 +676,6 @@ init();
        : `<div class="catrow secret"><span>${c[0]} ${c[1]}</span><b>❓</b></div>`
      ).join('');
    } else cattableEl.innerHTML='';
-
    const open=!!(cp && sett?.voting_open);
    const stateKey=cp?cp.id+':'+open:null;
    if(cp && lastVotingState!==null && lastVotingState===cp.id+':true' && !open){
@@ -775,13 +731,11 @@ init();
 .dphoto::before{content:'';position:absolute;inset:-10px;border-radius:50%;background:conic-gradient(from 0deg,#ff3fa4,#7c22d6,#22d9ff,#ffc42e,#ff3fa4);animation:spinRingBig 5s linear infinite;z-index:-1}
 .winner-photo{position:relative}
 .winner-photo::before{content:'';position:absolute;inset:-12px;border-radius:50%;background:conic-gradient(from 0deg,#ffc42e,#ff3fa4,#7c22d6,#22d9ff,#ffc42e);animation:spinRingBig 4s linear infinite;z-index:-1}
-
 .cattable{max-width:520px;margin:20px auto 0;display:grid;gap:8px}
 .catrow{display:flex;justify-content:space-between;align-items:center;background:#151934cc;border:1px solid #363a60;border-radius:12px;padding:10px 20px;font-size:clamp(15px,1.8vw,22px)}
 .catrow b{color:#20df67;font-size:clamp(18px,2.2vw,26px)}
 .catrow.secret{border-style:dashed;border-color:#ffc42e88}
 .catrow.secret b{color:#ffc42e}
-
 .final-title{text-align:center;font-size:clamp(28px,4vw,48px);font-weight:1000;color:#ffc42e;text-shadow:0 0 25px #ffc42188;margin-bottom:20px}
 .finaltable{max-width:900px;margin:0 auto}
 .ftrow{display:grid;grid-template-columns:50px 60px 1fr 110px 110px;align-items:center;gap:14px;padding:12px 18px;margin:7px 0;border:1px solid #363a60;border-radius:14px;background:#151934}
@@ -793,7 +747,6 @@ init();
 .ftpub{font-size:clamp(16px,2vw,24px);font-weight:900;color:#20df67;text-align:center}
 .ftsecret{font-size:clamp(16px,2vw,24px);font-weight:900;color:#7b7ea3;text-align:center}
 .ftsecret.revealed{color:#ffc42e}
-
 .comment-feed{position:fixed;left:20px;bottom:20px;display:flex;flex-direction:column-reverse;gap:8px;max-width:min(90vw,420px);z-index:50}
 @keyframes commentIn{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
 .commentbubble{background:#151934ee;border:1px solid #7c22d6;border-radius:14px 14px 14px 2px;padding:10px 16px;font-size:15px;animation:commentIn .35s ease}
