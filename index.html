@@ -106,10 +106,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 .commentbox button{border:0;background:#7c22d6;color:#fff;border-radius:8px;padding:0 16px;font-weight:900;cursor:pointer}
 .vote-countdown{text-align:center;font-size:22px;font-weight:900;color:#ffc42e;background:#171a36;border-radius:30px;padding:10px 20px;margin-bottom:12px;transition:color .2s}
 .vote-countdown.urgent{color:#ff4545;animation:pulseUrgent .6s infinite alternate}
-.fx-flash{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;font-size:min(30vw,220px);pointer-events:none;animation:fxPop 1.2s ease-out forwards}
-@keyframes fxPop{0%{opacity:0;transform:scale(.3) rotate(-8deg)}15%{opacity:1;transform:scale(1.15) rotate(4deg)}30%{transform:scale(1) rotate(0deg)}80%{opacity:1}100%{opacity:0;transform:scale(1.1)}}
-.fxbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
-.fxbtn{border:0;border-radius:10px;padding:12px 14px;font-weight:800;font-size:14px;cursor:pointer;color:#fff;flex:1;min-width:130px}
 @keyframes pulseUrgent{from{transform:scale(1)}to{transform:scale(1.05)}}
 </style>
 </head>
@@ -203,17 +199,9 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <button class="primary" onclick="saveSettings()">GUARDAR CONFIGURACIÓN</button>
 <button class="primary" style="background:#33395c" onclick="resetVotes()">↻ BORRAR TODOS LOS VOTOS</button>
 <hr style="border-color:#333756;width:100%">
-<b style="align-self:flex-start">🔊 Botón de sonido sorpresa</b>
-<p class="sub" style="margin:0 0 4px">Suena y aparece en TODAS las pantallas conectadas al instante.</p>
-<div class="fxbar">
-<button class="fxbtn" style="background:#7c22d6" onclick="broadcastFx('drumroll')">🥁 Redoble</button>
-<button class="fxbtn" style="background:#ff7a3d" onclick="broadcastFx('trombone')">😂 Cómico</button>
-<button class="fxbtn" style="background:#ff3636" onclick="broadcastFx('siren')">🚨 Sirena</button>
-<button class="fxbtn" style="background:#20b957;color:#052" onclick="broadcastFx('applause')">👏 Aplausos</button>
-</div>
-<hr style="border-color:#333756;width:100%">
 <button class="primary" style="background:#ff4545" onclick="closeContest()">🏁 CERRAR CONCURSO (ya cantaron todos)</button>
-<button class="primary" style="background:#ffc42e;color:#241800" onclick="revealWinner()">🏆 CONOCER RESULTADO (revela lo secreto)</button>
+<button class="primary" style="background:#ffc42e;color:#241800" onclick="revealWinner()">🏆 CONOCER RESULTADO (revel épico)</button>
+<button class="primary" style="background:#a82aff" onclick="showSecretTable()">📊 TABLA FINAL (revelar puntaje secreto)</button>
 <button class="primary" style="background:#33395c" onclick="hideWinner()">✖ Ocultar resultado</button>
 <button class="primary" style="background:#33395c" onclick="reopenContest()">↩ Reabrir concurso</button>
 <hr style="border-color:#333756;width:100%">
@@ -248,31 +236,11 @@ function playClick(){try{beep(700,60,0,0.06)}catch(e){}}
 function playSuccess(){try{beep(523,110,0);beep(659,110,0.09);beep(784,160,0.18)}catch(e){}}
 function playApplause(){try{const c=actx();for(let i=0;i<26;i++){const t=Math.random()*0.6;const buf=c.createBuffer(1,c.sampleRate*0.05,c.sampleRate);const d=buf.getChannelData(0);for(let j=0;j<d.length;j++)d[j]=(Math.random()*2-1)*(1-j/d.length);const src=c.createBufferSource();src.buffer=buf;const g=c.createGain();g.gain.value=0.05+Math.random()*0.05;src.connect(g);g.connect(c.destination);src.start(c.currentTime+t)}}catch(e){}}
 function vib(pattern){try{navigator.vibrate&&navigator.vibrate(pattern)}catch(e){}}
-// ---- Efectos de sonido extra para el botón de sorpresa ----
+// ---- Redoble de tambor para el revel épico ----
 function playDrumroll(){try{const c=actx();const t0=c.currentTime;for(let i=0;i<40;i++){const t=t0+i*0.045;const buf=c.createBuffer(1,c.sampleRate*0.04,c.sampleRate);const d=buf.getChannelData(0);for(let j=0;j<d.length;j++)d[j]=(Math.random()*2-1)*(1-j/d.length);const src=c.createBufferSource();src.buffer=buf;const g=c.createGain();g.gain.value=0.06+ (i/40)*0.06;src.connect(g);g.connect(c.destination);src.start(t)}
   const crashT=t0+1.85;const cbuf=c.createBuffer(1,c.sampleRate*0.6,c.sampleRate);const cd=cbuf.getChannelData(0);for(let j=0;j<cd.length;j++)cd[j]=(Math.random()*2-1)*(1-j/cd.length);const csrc=c.createBufferSource();csrc.buffer=cbuf;const cg=c.createGain();cg.gain.value=0.22;csrc.connect(cg);cg.connect(c.destination);csrc.start(crashT);
   beep(200,500,1.85,0.12);beep(150,600,1.9,0.1);
  }catch(e){}}
-function playTrombone(){try{const c=actx();[0,0.45,0.9].forEach((delay,i)=>{const o=c.createOscillator();const g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sawtooth';const t=c.currentTime+delay;const f0=380-i*40;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*0.55,t+0.4);g.gain.value=0.001;g.gain.exponentialRampToValueAtTime(0.09,t+0.05);g.gain.exponentialRampToValueAtTime(0.001,t+0.42);o.start(t);o.stop(t+0.45)})}catch(e){}}
-function playSiren(){try{const c=actx();const o=c.createOscillator();const g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';g.gain.value=0.07;const t0=c.currentTime;for(let i=0;i<4;i++){o.frequency.setValueAtTime(500,t0+i*0.5);o.frequency.linearRampToValueAtTime(900,t0+i*0.5+0.25);o.frequency.linearRampToValueAtTime(500,t0+i*0.5+0.5)}o.start(t0);g.gain.setValueAtTime(0.07,t0+1.95);g.gain.exponentialRampToValueAtTime(0.001,t0+2.05);o.stop(t0+2.1)}catch(e){}}
-const FX_SOUNDS={drumroll:playDrumroll,trombone:playTrombone,siren:playSiren,applause:playApplause};
-function playFx(kind){try{(FX_SOUNDS[kind]||playApplause)();}catch(e){}
-  vib(kind==='siren'?[0,120,80,120,80,120]:[0,60,40,60]);
-  flashFx(kind);
-}
-function flashFx(kind){
-  const el=document.createElement('div');
-  el.className='fx-flash';
-  el.textContent=kind==='drumroll'?'🥁':kind==='trombone'?'😂':kind==='siren'?'🚨':'👏';
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),1400);
-}
-const fxChannel=sb.channel('fiebre-fx',{config:{broadcast:{self:false}}});
-fxChannel.on('broadcast',{event:'fx'},payload=>{ if(payload?.payload?.kind) playFx(payload.payload.kind); }).subscribe();
-async function broadcastFx(kind){
-  playFx(kind);
-  try{ await fxChannel.send({type:'broadcast',event:'fx',payload:{kind}}); }catch(e){}
-}
 const cats=[['🎵','Voz'],['❤️','Interpretación'],['⚡','Desplante'],['💃','Show'],['😊','Entretenimiento']];
 let state={participants:[],settings:{},votes:[]};
 let ratings=[null,null,null,null,null];
@@ -608,8 +576,11 @@ async function revealWinner(){
 async function hideWinner(){
   try{ await rpc('admin_hide_winner',{}); toast('Resultado oculto');}catch(e){}
 }
+async function showSecretTable(){
+  try{ await rpc('admin_show_secret_table',{}); toast('📊 Tabla final con puntaje secreto mostrada en TV');}catch(e){}
+}
 async function closeContest(){
-  if(!confirm('¿Cerrar el concurso? La pantalla TV pasará a mostrar la tabla final.'))return;
+  if(!confirm('¿Cerrar el concurso? La pantalla TV pasará a mostrar la tabla preliminar.'))return;
   try{ await rpc('admin_close_contest',{}); toast('🏁 Concurso cerrado — mira la pantalla TV');}catch(e){}
 }
 async function reopenContest(){
@@ -686,7 +657,7 @@ init();
    </div>
    </div>
    <div id="finalView" class="hidden">
-     <div class="final-title">🏁 TABLA FINAL</div>
+     <div class="final-title" id="finalTitle">🏁 TABLA PRELIMINAR</div>
      <div id="finalTable" class="finaltable"></div>
      <div class="awards-title">🏅 PREMIOS DE LA NOCHE</div>
      <div id="awardsGrid" class="awards-grid"></div>
@@ -723,8 +694,6 @@ init();
  let reactionTimestamps=[];
  let revealSequenceStarted=false, revealSequenceDone=false, initialLoad=true;
  const idlePhrases=['🔥 ¡La noche está que arde!','🎶 Prepárense para la próxima sorpresa…','👏 ¡Sigan animando desde sus casas!','🏆 ¿Quién se llevará el título esta noche?'];
- // Escucha los botones de sonido sorpresa del admin
- dsb.channel('fiebre-fx',{config:{broadcast:{self:false}}}).on('broadcast',{event:'fx'},payload=>{ if(payload?.payload?.kind && typeof playFx==='function') playFx(payload.payload.kind); }).subscribe();
  function wait(ms){return new Promise(r=>setTimeout(r,ms))}
  function photoOfP(x){return x.photo_url?`<img src="${x.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:x.emoji}
  async function runDramaticReveal(sorted){
@@ -825,21 +794,23 @@ init();
    if(sett?.contest_closed){
      document.getElementById('normalView').classList.add('hidden');
      document.getElementById('finalView').classList.remove('hidden');
-     const revealed=!!sett.show_winner;
+     const secretRevealed=!!sett.show_secret_table;
+     const winnerPhase=!!sett.show_winner;
      const withScores=parts.map(p=>{
        const cs=catSums(votes,p.id);
        const pub=cs[0]+cs[1]+cs[2]+cs[3];
        const sec=cs[4];
        return {p,cs,pub,sec,real:pub+sec};
      });
-     const sorted=[...withScores].sort((a,b)=> revealed ? b.real-a.real : b.pub-a.pub);
+     document.getElementById('finalTitle').textContent=secretRevealed?'🏆 TABLA FINAL':'🏁 TABLA PRELIMINAR';
+     const sorted=[...withScores].sort((a,b)=> secretRevealed ? b.real-a.real : b.pub-a.pub);
      document.getElementById('finalTable').innerHTML=sorted.map((row,i)=>`
-       <div class="ftrow ${revealed&&i===0?'ftfirst':''}">
-         <div class="ftplace">${revealed?(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1):(i+1)}</div>
+       <div class="ftrow ${secretRevealed&&i===0?'ftfirst':''}">
+         <div class="ftplace">${secretRevealed?(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1):(i+1)}</div>
          <div class="ftphoto">${photoOf(row.p)}</div>
          <div class="ftname">${row.p.name}</div>
          <div class="ftpub">${row.pub}<small> pts</small></div>
-         <div class="ftsecret ${revealed?'revealed':''}">${revealed?row.sec+' pts':'❓'}</div>
+         <div class="ftsecret ${secretRevealed?'revealed':''}">${secretRevealed?row.sec+' pts':'❓'}</div>
        </div>`).join('');
      const leaderFor=idx=>withScores.reduce((best,cur)=>(cur.cs[idx]>0 && (!best||cur.cs[idx]>best.cs[idx]))?cur:best,null);
      const awardDefs=[
@@ -852,14 +823,19 @@ init();
        const w=leaderFor(a.idx);
        return w?`<div class="award-card"><div class="award-icon">${a.icon}</div><div class="award-label">${a.label}</div><div class="award-name">${w.p.name}</div><div class="award-score">${w.cs[a.idx]} pts</div></div>`:'';
      }).join('');
-     if(revealed){
+     if(secretRevealed){
        const w5=leaderFor(4);
        if(w5) awardsHtml+=`<div class="award-card secret-award"><div class="award-icon">😊</div><div class="award-label">Más Entretenido (secreto)</div><div class="award-name">${w5.p.name}</div><div class="award-score">${w5.cs[4]} pts</div></div>`;
      }
      document.getElementById('awardsGrid').innerHTML=awardsHtml;
      const winEl=document.getElementById('winnerOverlay');
-     if(revealed && sorted.length){
-       const w=sorted[0];
+     const realSorted=[...withScores].sort((a,b)=>b.real-a.real);
+     if(secretRevealed){
+       // El admin pidió ver la tabla con el secreto revelado: se oculta cualquier overlay para mostrarla
+       winEl.classList.add('hidden');
+       document.getElementById('revealShow').classList.add('hidden');
+     } else if(winnerPhase && realSorted.length){
+       const w=realSorted[0];
        document.getElementById('winnerPhoto').innerHTML=photoOf(w.p);
        document.getElementById('winnerName').textContent=w.p.name;
        document.getElementById('winnerPoints').textContent=w.real.toFixed(0)+' pts';
@@ -869,7 +845,7 @@ init();
          winnerShown=true; revealSequenceStarted=true; revealSequenceDone=true;
        } else if(!revealSequenceStarted){
          winEl.classList.add('hidden');
-         runDramaticReveal(sorted);
+         runDramaticReveal(realSorted);
        } else if(revealSequenceDone){
          winEl.classList.remove('hidden');
        } else {
