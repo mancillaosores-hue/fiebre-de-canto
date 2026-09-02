@@ -738,6 +738,14 @@ init();
    countEl.textContent='';
    if(typeof playDrumroll==='function') playDrumroll();
    await wait(2000);
+   // Mostramos primero la foto del ganador (queda tapada por el show, que tiene mayor z-index)
+   // y solo después ocultamos el show — así no queda ningún hueco donde se vea la tabla de fondo.
+   const winEl=document.getElementById('winnerOverlay');
+   const w=sorted[0];
+   document.getElementById('winnerPhoto').innerHTML=photoOfP(w.p);
+   document.getElementById('winnerName').textContent=w.p.name;
+   document.getElementById('winnerPoints').textContent=w.real.toFixed(0)+' pts';
+   winEl.classList.remove('hidden');
    showEl.classList.add('hidden');
    playApplause();
    if(window.confetti){ const burst=()=>confetti({particleCount:150,spread:160,origin:{y:0.4}}); burst(); setTimeout(burst,400); setTimeout(burst,800); }
