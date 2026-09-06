@@ -640,6 +640,7 @@ init();
  document.body.style.height='100%';
  document.body.innerHTML=`
  <div class="display">
+  <div id="tvFit">
    <div class="tv-stats-bar" id="tvStatsBar">
      <div class="tv-stat">🎤 Faltan <b id="tvPending">--</b> por cantar</div>
      <div class="tv-stat">🏆 Récord de la noche: <b id="tvRecord">--</b></div>
@@ -669,6 +670,7 @@ init();
    </div>
    <div id="commentFeed" class="comment-feed"></div>
    <div class="display-footer">❤️ Gracias por participar · Los resultados se actualizan automáticamente</div>
+  </div>
  </div>
  <div id="reactLayer" class="react-layer"></div>
  <div id="winnerOverlay" class="winner-overlay hidden">
@@ -786,18 +788,14 @@ init();
    setTimeout(()=>el.remove(),9000);
  }
  function fitTvScreen(){
-   const disp=document.querySelector('.display');
-   if(!disp) return;
-   const currentZoom=parseFloat(disp.style.zoom)||1;
-   const naturalH=disp.scrollHeight/currentZoom; // alto real del contenido, sin el zoom ya aplicado
+   const fit=document.getElementById('tvFit');
+   if(!fit) return;
+   const naturalH=fit.scrollHeight; // transform no afecta el layout, así que esto siempre es el alto real sin escalar
    const viewH=window.innerHeight;
    let scale=viewH/naturalH;
    if(!isFinite(scale)||scale>1) scale=1;
    if(scale<0.35) scale=0.35;
-   scale=Math.round(scale*200)/200; // evita microajustes que generen parpadeo
-   if(Math.abs(scale-currentZoom)>0.01){
-     disp.style.zoom=scale;
-   }
+   fit.style.transform='scale('+scale+')';
  }
  window.addEventListener('resize',fitTvScreen);
  async function refresh(){
@@ -1019,7 +1017,8 @@ init();
 })();
 </script>
 <style>
-.display{min-height:100vh;padding:30px 5vw;color:white;position:relative;overflow:hidden;background-color:#08091c;background-image:linear-gradient(rgba(8,9,28,.55),rgba(8,9,28,.55)),radial-gradient(circle at 50% 0,#42117b99,transparent 60%),url('Fotos/file_00000000a910820eb1dac6f19ce10a1b.png');background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed}
+.display{position:fixed;inset:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;color:white;overflow:hidden;background-color:#08091c;background-image:linear-gradient(rgba(8,9,28,.55),rgba(8,9,28,.55)),radial-gradient(circle at 50% 0,#42117b99,transparent 60%),url('Fotos/file_00000000a910820eb1dac6f19ce10a1b.png');background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed}
+#tvFit{width:100vw;box-sizing:border-box;padding:30px 5vw;transform-origin:center center}
 .display-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #45476b;padding-bottom:20px}
 .display-title{font-size:clamp(28px,4vw,60px);font-weight:1000;text-shadow:0 0 18px #a82aff}
 .display-title span{color:#ff42ae}.display-sub{font-size:clamp(16px,2vw,28px);color:#bfc2df;margin-top:5px}.display-clock{font-size:clamp(25px,4vw,55px);font-weight:900;color:#ffc321}
