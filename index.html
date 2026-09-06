@@ -788,15 +788,16 @@ init();
  function fitTvScreen(){
    const disp=document.querySelector('.display');
    if(!disp) return;
-   disp.style.zoom='1';
-   requestAnimationFrame(()=>{
-     const contentH=disp.scrollHeight;
-     const viewH=window.innerHeight;
-     let scale=viewH/contentH;
-     if(!isFinite(scale)||scale>1) scale=1;
-     if(scale<0.35) scale=0.35;
+   const currentZoom=parseFloat(disp.style.zoom)||1;
+   const naturalH=disp.scrollHeight/currentZoom; // alto real del contenido, sin el zoom ya aplicado
+   const viewH=window.innerHeight;
+   let scale=viewH/naturalH;
+   if(!isFinite(scale)||scale>1) scale=1;
+   if(scale<0.35) scale=0.35;
+   scale=Math.round(scale*200)/200; // evita microajustes que generen parpadeo
+   if(Math.abs(scale-currentZoom)>0.01){
      disp.style.zoom=scale;
-   });
+   }
  }
  window.addEventListener('resize',fitTvScreen);
  async function refresh(){
