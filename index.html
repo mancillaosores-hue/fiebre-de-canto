@@ -942,7 +942,7 @@ init();
        dsongEl.textContent=t.name+': '+t.fact;
      }
    }
-   document.getElementById('dphoto').innerHTML=cp?(cp.photo_url?`<img src="${cp.photo_url}" style="width:100%;height:100%;object-fit:cover;object-position:center top">`:cp.emoji):'';
+   document.getElementById('dphoto').innerHTML=cp?(cp.photo_url?`<img src="${cp.photo_url}" style="width:100%;height:100%;object-fit:contain">`:cp.emoji):'';
    const cpCatSums=cp?catSums(votes,cp.id):[0,0,0,0,0];
    const liveScore=cpCatSums[0]+cpCatSums[1]+cpCatSums[2]+cpCatSums[3];
    const scoreEl=document.getElementById('dscore');
