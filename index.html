@@ -633,6 +633,11 @@ init();
 (function(){
  const params=new URLSearchParams(location.search);
  if(params.get('pantalla')!=='resultados') return;
+ document.documentElement.style.overflow='hidden';
+ document.documentElement.style.height='100%';
+ document.body.style.margin='0';
+ document.body.style.overflow='hidden';
+ document.body.style.height='100%';
  document.body.innerHTML=`
  <div class="display">
    <div class="tv-stats-bar" id="tvStatsBar">
@@ -780,6 +785,20 @@ init();
    while(feed.children.length>5) feed.removeChild(feed.lastChild);
    setTimeout(()=>el.remove(),9000);
  }
+ function fitTvScreen(){
+   const disp=document.querySelector('.display');
+   if(!disp) return;
+   disp.style.zoom='1';
+   requestAnimationFrame(()=>{
+     const contentH=disp.scrollHeight;
+     const viewH=window.innerHeight;
+     let scale=viewH/contentH;
+     if(!isFinite(scale)||scale>1) scale=1;
+     if(scale<0.35) scale=0.35;
+     disp.style.zoom=scale;
+   });
+ }
+ window.addEventListener('resize',fitTvScreen);
  async function refresh(){
    const wasInitialLoad=initialLoad; initialLoad=false;
    const [{data:parts},{data:sett},{data:votes}]=await Promise.all([
@@ -864,6 +883,7 @@ init();
        document.getElementById('revealShow').classList.add('hidden');
        winnerShown=false; revealSequenceStarted=false; revealSequenceDone=false;
      }
+     fitTvScreen();
      return;
    } else {
      document.getElementById('normalView').classList.remove('hidden');
@@ -972,6 +992,7 @@ init();
    statusEl.textContent = !cp ? '' : (open?'🗳️ ¡VOTEN AHORA!':'🔒 VOTACIÓN CERRADA');
    statusEl.style.background = !cp ? 'transparent' : (open?'#16b954':'#7a1f1f');
    statusEl.style.color = '#fff';
+   fitTvScreen();
  }
  refresh(); setInterval(refresh,1500);
  setInterval(()=>{
