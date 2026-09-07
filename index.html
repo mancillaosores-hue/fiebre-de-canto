@@ -118,6 +118,15 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
     <button class="primary blue landing-btn" onclick="enterAs('admin')">⚙️ INGRESAR COMO ADMIN</button>
   </div>
 </div>
+<div id="nameGate" class="landing hidden" style="align-items:center;background:#0e1030">
+  <div class="landing-inner-photo" style="background:none;padding:24px;max-width:420px">
+    <div style="font-size:50px;margin-bottom:6px">👋</div>
+    <h2 style="margin:0 0 6px">¿Cómo te llamas?</h2>
+    <p class="sub" style="margin:0 0 18px">Ingresa tu nombre o apodo antes de votar. Quedará guardado en este celular, así no te lo volveremos a pedir.</p>
+    <div class="namebox"><input id="gateNameInput" placeholder="Tu nombre o apodo" maxlength="40" autofocus onkeydown="if(event.key==='Enter')confirmVoterName()"></div>
+    <button class="primary green landing-btn" onclick="confirmVoterName()">CONTINUAR ➤</button>
+  </div>
+</div>
 <div class="app">
 <aside class="side">
 <nav>
@@ -600,15 +609,33 @@ sb.channel('fiebre-de-canto')
  .subscribe();
 function enterAs(role){
   sessionStorage.setItem('fc_role',role);
-  document.getElementById('landing').classList.add('hidden');
   if(role==='admin'){
+    document.getElementById('landing').classList.add('hidden');
     document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
     show('admin');
     document.querySelectorAll('nav button')[3].classList.add('active');
     document.getElementById('pinInput')?.focus();
-  } else {
-    show('live');
+    return;
   }
+  // Votante: si ya tiene nombre guardado en este celular, entra directo. Si no, se lo pedimos primero.
+  const savedName=(localStorage.getItem('fc_voter_name')||'').trim();
+  if(savedName){
+    document.getElementById('landing').classList.add('hidden');
+    show('live');
+  } else {
+    document.getElementById('landing').classList.add('hidden');
+    document.getElementById('nameGate').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('gateNameInput')?.focus(),50);
+  }
+}
+function confirmVoterName(){
+  const name=document.getElementById('gateNameInput').value.trim();
+  if(!name){ document.getElementById('gateNameInput').focus(); return; }
+  localStorage.setItem('fc_voter_name',name);
+  document.getElementById('voterName').value=name;
+  lockName();
+  document.getElementById('nameGate').classList.add('hidden');
+  show('live');
 }
 async function init(){
   const savedName=localStorage.getItem('fc_voter_name')||'';
@@ -624,6 +651,10 @@ async function init(){
   if(savedRole){
     document.getElementById('landing').classList.add('hidden');
     if(savedRole==='admin'){ show('admin'); document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active')); document.querySelectorAll('nav button')[3].classList.add('active'); }
+    else if(savedRole==='voter'){
+      if(savedName){ show('live'); }
+      else { document.getElementById('nameGate').classList.remove('hidden'); setTimeout(()=>document.getElementById('gateNameInput')?.focus(),50); }
+    }
   }
 }
 init();
