@@ -157,6 +157,9 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <button onclick="sendReaction('🎶')">🎶</button>
 <button onclick="sendReaction('👍')">👍</button>
 <button onclick="sendReaction('🎉')">🎉</button>
+<button onclick="sendReaction('🐺')" title="Aullido">🐺</button>
+<button onclick="sendReaction('🙉')" title="No quiero oír">🙉</button>
+<button onclick="sendReaction('🤮')" title="Vomito">🤮</button>
 </div>
 <div class="commentbox" id="commentbox"><input id="commentInput" placeholder="Escribe un comentario…" maxlength="140"><button onclick="sendComment()">➤</button></div>
 </div>
@@ -817,10 +820,14 @@ init();
    const feed=document.getElementById('commentFeed');
    const el=document.createElement('div');
    el.className='commentbubble';
-   el.innerHTML=`<b>${name}</b> ${text}`;
+   const nameEl=document.createElement('b');
+   nameEl.textContent=name;
+   el.appendChild(nameEl);
+   el.appendChild(document.createTextNode(' '+text));
    feed.prepend(el);
-   while(feed.children.length>5) feed.removeChild(feed.lastChild);
-   setTimeout(()=>el.remove(),9000);
+   while(feed.children.length>3) feed.removeChild(feed.lastChild);
+   setTimeout(()=>el.classList.add('out'),14400);
+   setTimeout(()=>el.remove(),15000);
  }
  function fitTvScreen(){
    const fit=document.getElementById('tvFit');
@@ -1055,13 +1062,13 @@ init();
 </script>
 <style>
 .display{position:fixed;inset:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;color:white;overflow:hidden;background-color:#08091c;background-image:linear-gradient(rgba(8,9,28,.55),rgba(8,9,28,.55)),radial-gradient(circle at 50% 0,#42117b99,transparent 60%),url('Fotos/file_00000000a910820eb1dac6f19ce10a1b.png');background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed}
-#tvFit{width:100vw;box-sizing:border-box;padding:30px 5vw;transform-origin:center center}
+#tvFit{width:100vw;box-sizing:border-box;padding:18px 5vw;transform-origin:center center}
 .display-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #45476b;padding-bottom:20px}
 .display-title{font-size:clamp(28px,4vw,60px);font-weight:1000;text-shadow:0 0 18px #a82aff}
 .display-title span{color:#ff42ae}.display-sub{font-size:clamp(16px,2vw,28px);color:#bfc2df;margin-top:5px}.display-clock{font-size:clamp(25px,4vw,55px);font-weight:900;color:#ffc321}
-.dphoto{width:clamp(260px,26vw,420px);aspect-ratio:4/5;height:auto;border-radius:26px;margin:10px auto;border:5px solid #a82aff;background:linear-gradient(135deg,#201b53,#50227e);display:flex;align-items:center;justify-content:center;font-size:clamp(120px,18vw,220px);box-shadow:0 0 40px #922cff88;overflow:hidden}
+.dphoto{width:min(46vw,54vh);max-width:100%;aspect-ratio:4/5;height:auto;border-radius:26px;margin:6px auto;border:5px solid #a82aff;background:linear-gradient(135deg,#201b53,#50227e);display:flex;align-items:center;justify-content:center;font-size:clamp(120px,18vw,220px);box-shadow:0 0 40px #922cff88;overflow:hidden}
 .current-display.idle-mode .dphoto{display:none}
-.current-display{text-align:center;padding:70px 10px 18px;display:flex;align-items:center;justify-content:center;gap:5vw;position:relative;width:100%}
+.current-display{text-align:center;padding:56px 10px 8px;display:flex;align-items:center;justify-content:center;gap:5vw;position:relative;width:100%}
 .current-display .display-label{position:absolute;top:0;left:0;right:0;text-align:center}
 .current-display::before{content:'';position:absolute;left:50%;top:14%;bottom:8%;width:1px;background:linear-gradient(to bottom,transparent,#ffffff3a,transparent)}
 .current-display.idle-mode::before{display:none}
@@ -1076,7 +1083,7 @@ init();
 .dcountdown{margin-top:14px;font-size:clamp(28px,4vw,50px);font-weight:1000;color:#ffc42e;text-shadow:0 0 20px #ffc42188}
 .dcountdown.urgent{color:#ff4545;animation:pulseUrgentTV .6s infinite alternate}
 @keyframes pulseUrgentTV{from{transform:scale(1)}to{transform:scale(1.05)}}
-.tv-stats-bar{position:relative;z-index:2;display:flex;justify-content:center;gap:30px;flex-wrap:wrap;margin-bottom:20px;font-size:clamp(14px,1.6vw,20px);font-weight:800;color:#c9a8ff}
+.tv-stats-bar{position:relative;z-index:2;display:flex;justify-content:center;gap:30px;flex-wrap:wrap;margin-bottom:8px;font-size:clamp(14px,1.6vw,20px);font-weight:800;color:#c9a8ff}
 .tv-stat b{color:#fff}
 .dvoters{margin-top:6px;font-size:clamp(14px,1.8vw,22px);color:#22d9ff;font-weight:800}
 .hype-wrap{max-width:420px;width:90%;margin:18px auto 0}
@@ -1129,10 +1136,11 @@ init();
 .ftpub{font-size:clamp(16px,2vw,24px);font-weight:900;color:#20df67;text-align:center}
 .ftsecret{font-size:clamp(16px,2vw,24px);font-weight:900;color:#7b7ea3;text-align:center}
 .ftsecret.revealed{color:#ffc42e}
-.comment-feed{position:fixed;left:20px;bottom:20px;display:flex;flex-direction:column-reverse;gap:8px;max-width:min(90vw,420px);z-index:50}
-@keyframes commentIn{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
-.commentbubble{background:#151934ee;border:1px solid #7c22d6;border-radius:14px 14px 14px 2px;padding:10px 16px;font-size:15px;animation:commentIn .35s ease}
-.commentbubble b{color:#ff3fa4;margin-right:6px}
+.comment-feed{position:fixed;right:20px;bottom:70px;display:flex;flex-direction:column-reverse;align-items:flex-end;gap:14px;width:min(46vw,900px);z-index:50;pointer-events:none}
+@keyframes commentIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+.commentbubble{background:#151934f2;border:3px solid #7c22d6;border-radius:26px 26px 4px 26px;padding:16px 26px;font-size:clamp(24px,2.3vw,48px);font-weight:800;line-height:1.25;word-break:break-word;box-shadow:0 0 30px #7c22d666;animation:commentIn .35s ease;transition:opacity .6s ease}
+.commentbubble b{color:#ff3fa4;margin-right:10px}
+.commentbubble.out{opacity:0}
 
 /* ===== Revel dramático ===== */
 .reveal-show{position:fixed;inset:0;z-index:300;background:radial-gradient(circle at 50% 40%,#1a0f36,#020208 75%);display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:0;transition:opacity .6s ease}
