@@ -337,7 +337,7 @@ function renderRoster(){
     else if(hasVotes) statusHtml='<span class="rstat rstat-done">✅ YA CANTÓ</span>';
     else statusHtml='<span class="rstat rstat-pending">⏳ PENDIENTE</span>';
     return `<div class="rosterrow ${open?'ropen':''}">
-      <div class="rnum" style="background:${colorFor(p.id)}">${String(p.position||i+1).padStart(2,'0')}</div>
+      <div class="rnum" style="background:${colorFor(p.id)}">${String(i+1).padStart(2,'0')}</div>
       <div class="rmini">${miniAvatar(p)}</div>
       <div class="rinfo"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div>${statusHtml}</div>
       <button class="primary green rvote" ${open?'':'disabled'} onclick="scrollToVote()">VOTAR</button>
@@ -353,7 +353,7 @@ function renderCurrent(){
   if(p && p.id!==lastLiveId){ratings=[null,null,null,null,null];touched=[false,false,false,false,false]}
   lastLiveId=p?p.id:lastLiveId;
   const photoHtml=p?(p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji):'🎤';
-  document.getElementById('avatar').innerHTML=(p?`<span class="numchip">${String((p.position||1)).padStart(2,'0')}</span>`:'')+photoHtml;
+  document.getElementById('avatar').innerHTML=(p?`<span class="numchip">${String(state.participants.findIndex(x=>x.id===p.id)+1).padStart(2,'0')}</span>`:'')+photoHtml;
   document.getElementById('currentCard').style.setProperty('--pcolor',p?colorFor(p.id):'#a82aff');
   document.getElementById('currentName').textContent=p?p.name:'—';
   document.getElementById('currentSong').textContent=p?('🎵 '+p.song):'Esperando al administrador…';
@@ -872,13 +872,15 @@ init();
      });
      document.getElementById('finalTitle').textContent=secretRevealed?'🏆 TABLA FINAL':'🏁 TABLA PRELIMINAR';
      const sorted=[...withScores].sort((a,b)=> secretRevealed ? b.real-a.real : b.pub-a.pub);
-     document.getElementById('finalTable').innerHTML=sorted.map((row,i)=>`
-       <div class="ftrow ${secretRevealed&&i===0?'ftfirst':''}">
+     const ftHeader=secretRevealed?`<div class="ftrow ftwithtotal fthead"><div></div><div></div><div></div><div>PÚBLICO</div><div>SECRETO</div><div>TOTAL</div></div>`:'';
+     document.getElementById('finalTable').innerHTML=ftHeader+sorted.map((row,i)=>`
+       <div class="ftrow ${secretRevealed?'ftwithtotal':''} ${secretRevealed&&i===0?'ftfirst':''}">
          <div class="ftplace">${secretRevealed?(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1):(i+1)}</div>
          <div class="ftphoto">${photoOf(row.p)}</div>
          <div class="ftname">${row.p.name}</div>
          <div class="ftpub">${row.pub}<small> pts</small></div>
          <div class="ftsecret ${secretRevealed?'revealed':''}">${secretRevealed?row.sec+' pts':'❓'}</div>
+         ${secretRevealed?`<div class="fttotal">${row.real}<small> pts</small></div>`:''}
        </div>`).join('');
      const leaderFor=idx=>withScores.reduce((best,cur)=>(cur.cs[idx]>0 && (!best||cur.cs[idx]>best.cs[idx]))?cur:best,null);
      const awardDefs=[
@@ -958,19 +960,15 @@ init();
      const cycleLen=7000;
      const allTrivia=[];
      parts.forEach(pp=>{(Array.isArray(pp.trivia)?pp.trivia:[]).forEach(t=>{if(t) allTrivia.push({name:pp.name,fact:t});});});
-     const numSlides=allTrivia.length?4:3;
+     const numSlides=allTrivia.length?3:2;
      const slideIdx=Math.floor(Date.now()/cycleLen)%numSlides;
-     const isTriviaSlide = allTrivia.length && slideIdx===3;
+     const isTriviaSlide = allTrivia.length && slideIdx===2;
      dnameEl.classList.toggle('trivia-mode',!!isTriviaSlide);
      dsongEl.classList.toggle('trivia-mode',!!isTriviaSlide);
      if(slideIdx===0){
        dnameEl.textContent='🎤 '+(sett?.event_name||'Muy pronto en el escenario…');
        dsongEl.textContent='';
      } else if(slideIdx===1){
-       const topList=[...parts].sort((a,b)=>sumFor(b.id)-sumFor(a.id)).slice(0,3);
-       dnameEl.textContent='📊 RANKING PARCIAL';
-       dsongEl.textContent=topList.length?topList.map((p,i)=>(i===0?'🥇':i===1?'🥈':'🥉')+' '+p.name).join('   '):'Aún sin votos';
-     } else if(slideIdx===2){
        const phrase=idlePhrases[Math.floor(Date.now()/(cycleLen*numSlides))%idlePhrases.length];
        dnameEl.textContent=phrase;
        dsongEl.textContent='';
@@ -1136,6 +1134,11 @@ init();
 .ftpub{font-size:clamp(16px,2vw,24px);font-weight:900;color:#20df67;text-align:center}
 .ftsecret{font-size:clamp(16px,2vw,24px);font-weight:900;color:#7b7ea3;text-align:center}
 .ftsecret.revealed{color:#ffc42e}
+.ftrow.ftwithtotal{grid-template-columns:50px 60px 1fr 110px 110px 140px}
+.fttotal{font-size:clamp(20px,2.6vw,34px);font-weight:1000;color:#fff;text-align:center;text-shadow:0 0 14px #a82aff}
+.fttotal small{font-size:14px;color:#bfc2df}
+.ftrow.fthead{background:transparent;border-color:transparent;padding-top:0;padding-bottom:0;margin-bottom:0;font-size:clamp(11px,1.2vw,15px);font-weight:900;letter-spacing:1px;color:#bfc2df;text-align:center}
+@media(max-width:700px){.ftrow.ftwithtotal{grid-template-columns:32px 42px 1fr 60px 60px 70px}}
 .comment-feed{position:fixed;right:20px;bottom:70px;display:flex;flex-direction:column-reverse;align-items:flex-end;gap:14px;width:min(46vw,900px);z-index:50;pointer-events:none}
 @keyframes commentIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
 .commentbubble{background:#151934f2;border:3px solid #7c22d6;border-radius:26px 26px 4px 26px;padding:16px 26px;font-size:clamp(24px,2.3vw,48px);font-weight:800;line-height:1.25;word-break:break-word;box-shadow:0 0 30px #7c22d666;animation:commentIn .35s ease;transition:opacity .6s ease}
