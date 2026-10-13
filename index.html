@@ -170,7 +170,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <div class="namebox"><input id="voterName" placeholder="Tu nombre o apodo" maxlength="40"><button class="primary blue" id="editNameBtn" style="display:none" onclick="editName()">✎</button></div>
 <div class="sub">Toca el número (1 a 10) en cada categoría — la última es secreta 🤫</div>
 <div id="ratings" class="rating"></div>
-<div class="total">TOTAL <small>(de 50 puntos)</small><br><b id="total">0</b></div>
+<div class="total">TOTAL <small>(de 30 puntos)</small><br><b id="total">0</b></div>
 <button class="primary green submit" id="submitBtn" onclick="submitVote()">ENVIAR VOTO ➤</button>
 <div class="notice">🔒 Tu voto queda registrado con tu nombre y no se puede modificar.</div>
 </div>
@@ -224,7 +224,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </div>
 </div>
 </section>
-<section id="help" class="page hidden"><div class="card"><h1>ℹ️ Cómo funciona</h1><ol><li>Cada participante interpreta una canción.</li><li>El administrador marca quién está "en vivo" en la pestaña Admin.</li><li>El público escribe su nombre y califica de 1 a 10 en cinco categorías (deslizando o escribiendo el número).</li><li>Cada persona vota una sola vez por cada participante (se identifica por su nombre).</li><li>Los votos se suman en tiempo real entre todos los celulares conectados.</li><li>El administrador puede agregar, editar y eliminar participantes con su PIN.</li></ol><p><b>Pantalla grande:</b> abre este mismo archivo agregando <code>?pantalla=resultados</code> al final del link para mostrar el ranking en un TV o proyector.</p></div></section>
+<section id="help" class="page hidden"><div class="card"><h1>ℹ️ Cómo funciona</h1><ol><li>Cada participante interpreta una canción.</li><li>El administrador marca quién está "en vivo" en la pestaña Admin.</li><li>El público escribe su nombre y califica de 1 a 10 en tres categorías (la última es secreta) (deslizando o escribiendo el número).</li><li>Cada persona vota una sola vez por cada participante (se identifica por su nombre).</li><li>Los votos se suman en tiempo real entre todos los celulares conectados.</li><li>El administrador puede agregar, editar y eliminar participantes con su PIN.</li></ol><p><b>Pantalla grande:</b> abre este mismo archivo agregando <code>?pantalla=resultados</code> al final del link para mostrar el ranking en un TV o proyector.</p></div></section>
 <div class="footer">🎵 ¡Que gane el mejor! 🎤 <span>Fiebre de Canto Familiar ❤️</span></div>
 </main></div><div id="toast" class="toast"></div>
 <div id="thanksOverlay" class="thanks-overlay hidden" onclick="this.classList.add('hidden')">
@@ -253,10 +253,10 @@ function playDrumroll(){try{const c=actx();const t0=c.currentTime;for(let i=0;i<
   const crashT=t0+1.85;const cbuf=c.createBuffer(1,c.sampleRate*0.6,c.sampleRate);const cd=cbuf.getChannelData(0);for(let j=0;j<cd.length;j++)cd[j]=(Math.random()*2-1)*(1-j/cd.length);const csrc=c.createBufferSource();csrc.buffer=cbuf;const cg=c.createGain();cg.gain.value=0.22;csrc.connect(cg);cg.connect(c.destination);csrc.start(crashT);
   beep(200,500,1.85,0.12);beep(150,600,1.9,0.1);
  }catch(e){}}
-const cats=[['🎵','Voz'],['❤️','Interpretación'],['⚡','Desplante'],['💃','Show'],['😊','Entretenimiento']];
+const cats=[['🎵','Voz'],['👗','Vestuario'],['⚡','Desplante']];
 let state={participants:[],settings:{},votes:[]};
-let ratings=[null,null,null,null,null];
-let touched=[false,false,false,false,false];
+let ratings=[null,null,null];
+let touched=[false,false,false];
 function allTouched(){return touched.every(t=>t)}
 let adminPin=sessionStorage.getItem('fc_admin_pin')||null;
 let voteCountdownEnd=null;
@@ -350,7 +350,7 @@ const PALETTE=['#ff3fa4','#22d9ff','#ffc42e','#20df67','#7c22d6','#ff7a3d','#3fa
 function colorFor(id){return PALETTE[(id||0)%PALETTE.length]}
 function renderCurrent(){
   const p=currentParticipant();
-  if(p && p.id!==lastLiveId){ratings=[null,null,null,null,null];touched=[false,false,false,false,false]}
+  if(p && p.id!==lastLiveId){ratings=[null,null,null];touched=[false,false,false]}
   lastLiveId=p?p.id:lastLiveId;
   const photoHtml=p?(p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji):'🎤';
   document.getElementById('avatar').innerHTML=(p?`<span class="numchip">${String(state.participants.findIndex(x=>x.id===p.id)+1).padStart(2,'0')}</span>`:'')+photoHtml;
@@ -386,7 +386,7 @@ function renderRatings(){
     <div class="numpick">${nums}</div></div>`;
   }).join('');
   const done=touched.filter(Boolean).length;
-  document.getElementById('total').textContent = done<5 ? `Faltan ${5-done}/5` : ratings.reduce((a,b)=>a+Number(b),0);
+  document.getElementById('total').textContent = done<3 ? `Faltan ${3-done}/3` : ratings.reduce((a,b)=>a+Number(b),0);
   document.getElementById('submitBtn').disabled = !currentParticipant() || !state.settings.voting_open || !allTouched();
 }
 function rate(i,v){v=Math.max(1,Math.min(10,Math.round(Number(v)||1)));ratings[i]=v;touched[i]=true;playClick();vib(15);renderRatings()}
@@ -396,7 +396,7 @@ async function submitVote(){
   if(!state.settings.voting_open) return toast('🔒 La votación está cerrada',true);
   const name=document.getElementById('voterName').value.trim();
   if(!name) return toast('Escribe tu nombre o apodo',true);
-  if(!allTouched()) return toast('⚠️ Debes calificar las 5 categorías',true);
+  if(!allTouched()) return toast('⚠️ Debes calificar las 3 categorías',true);
   localStorage.setItem('fc_voter_name',name);
   lockName();
   if(hasVoted(p.id,name)) return toast('⚠️ Ya votaste por este participante',true);
@@ -412,8 +412,8 @@ async function submitVote(){
   playSuccess(); vib([30,40,30,40,80]);
   if(window.confetti) confetti({particleCount:120,spread:80,origin:{y:0.6}});
   showThanks(p,name);
-  ratings=[null,null,null,null,null];
-  touched=[false,false,false,false,false];
+  ratings=[null,null,null];
+  touched=[false,false,false];
   await loadAll();
 }
 function showThanks(p,name){
@@ -797,7 +797,7 @@ init();
    winnerShown=true;
    revealSequenceDone=true;
  }
- function catSums(votes,id){const arr=[0,0,0,0,0];(votes||[]).filter(v=>v.participant_id===id).forEach(v=>{(v.scores||[]).forEach((s,i)=>arr[i]+=Number(s))});return arr}
+ function catSums(votes,id){const arr=[0,0,0];(votes||[]).filter(v=>v.participant_id===id).forEach(v=>{(v.scores||[]).forEach((s,i)=>arr[i]+=Number(s))});return arr}
  function spawnReaction(emoji){
    const el=document.createElement('div');
    el.className='floatie';
@@ -866,8 +866,8 @@ init();
      const winnerPhase=!!sett.show_winner;
      const withScores=parts.map(p=>{
        const cs=catSums(votes,p.id);
-       const pub=cs[0]+cs[1]+cs[2]+cs[3];
-       const sec=cs[4];
+       const pub=cs[0]+cs[1];
+       const sec=cs[2];
        return {p,cs,pub,sec,real:pub+sec};
      });
      document.getElementById('finalTitle').textContent=secretRevealed?'🏆 TABLA FINAL':'🏁 TABLA PRELIMINAR';
@@ -885,17 +885,15 @@ init();
      const leaderFor=idx=>withScores.reduce((best,cur)=>(cur.cs[idx]>0 && (!best||cur.cs[idx]>best.cs[idx]))?cur:best,null);
      const awardDefs=[
        {icon:'🎤',label:'Voz de Oro',idx:0},
-       {icon:'💖',label:'Mejor Interpretación',idx:1},
-       {icon:'⚡',label:'Más Desplante',idx:2},
-       {icon:'💃',label:'Más Show',idx:3}
+       {icon:'👗',label:'Mejor Vestuario',idx:1}
      ];
      let awardsHtml=awardDefs.map(a=>{
        const w=leaderFor(a.idx);
        return w?`<div class="award-card"><div class="award-icon">${a.icon}</div><div class="award-label">${a.label}</div><div class="award-name">${w.p.name}</div><div class="award-score">${w.cs[a.idx]} pts</div></div>`:'';
      }).join('');
      if(secretRevealed){
-       const w5=leaderFor(4);
-       if(w5) awardsHtml+=`<div class="award-card secret-award"><div class="award-icon">😊</div><div class="award-label">Más Entretenido (secreto)</div><div class="award-name">${w5.p.name}</div><div class="award-score">${w5.cs[4]} pts</div></div>`;
+       const w5=leaderFor(2);
+       if(w5) awardsHtml+=`<div class="award-card secret-award"><div class="award-icon">⚡</div><div class="award-label">Más Desplante (secreto)</div><div class="award-name">${w5.p.name}</div><div class="award-score">${w5.cs[2]} pts</div></div>`;
      }
      document.getElementById('awardsGrid').innerHTML=awardsHtml;
      const winEl=document.getElementById('winnerOverlay');
@@ -937,7 +935,7 @@ init();
    const allWithScores=parts.map(p=>{
      const cs=catSums(votes,p.id);
      const cnt=(votes||[]).filter(v=>v.participant_id===p.id).length;
-     return {p,cs,pub:cs[0]+cs[1]+cs[2]+cs[3],count:cnt};
+     return {p,cs,pub:cs[0]+cs[1],count:cnt};
    });
    const pendingCount=allWithScores.filter(x=>x.p.id!==sett?.current_participant_id && x.count===0).length;
    const tvPendingEl=document.getElementById('tvPending');
@@ -979,8 +977,8 @@ init();
      }
    }
    document.getElementById('dphoto').innerHTML=cp?(cp.photo_url?`<img src="${cp.photo_url}" style="width:100%;height:100%;object-fit:contain">`:cp.emoji):'';
-   const cpCatSums=cp?catSums(votes,cp.id):[0,0,0,0,0];
-   const liveScore=cpCatSums[0]+cpCatSums[1]+cpCatSums[2]+cpCatSums[3];
+   const cpCatSums=cp?catSums(votes,cp.id):[0,0,0];
+   const liveScore=cpCatSums[0]+cpCatSums[1];
    const scoreEl=document.getElementById('dscore');
    if(scoreEl.dataset.prev!==String(liveScore)){scoreEl.style.transform='scale(1.15)';setTimeout(()=>scoreEl.style.transform='scale(1)',220)}
    scoreEl.dataset.prev=String(liveScore);
@@ -994,7 +992,7 @@ init();
        dvotersEl.textContent='👥 '+cpVoteCount+' voto'+(cpVoteCount===1?'':'s');
        dvotersEl.classList.remove('hidden');
      }
-     cattableEl.innerHTML = cats.map((c,i)=> i<4
+     cattableEl.innerHTML = cats.map((c,i)=> i<2
        ? `<div class="catrow"><span>${c[0]} ${c[1]}</span><b>${cs[i]}<small class="cat-avg"> (${cpVoteCount?(cs[i]/cpVoteCount).toFixed(1):'0.0'} prom)</small></b></div>`
        : `<div class="catrow secret"><span>${c[0]} ${c[1]}</span><b>❓</b></div>`
      ).join('');
