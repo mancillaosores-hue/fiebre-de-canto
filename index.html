@@ -108,6 +108,26 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 .vote-countdown.urgent{color:#ff4545;animation:pulseUrgent .6s infinite alternate}
 @keyframes pulseUrgent{from{transform:scale(1)}to{transform:scale(1.05)}}
 </style>
+<style id="albumcss">
+.albumhead{display:flex;justify-content:space-between;font-size:13px;opacity:.85;margin:8px 0 4px}
+.albumbar{height:8px;border-radius:4px;background:#222743;margin-bottom:10px}
+.albumbar i{display:block;height:8px;border-radius:4px;background:#20df67;width:0;transition:width .4s}
+.albumcard{display:flex;gap:12px;align-items:center;margin:6px 0 10px}
+.albumav{width:56px;height:56px;border-radius:50%;overflow:hidden;background:#222743;display:flex;align-items:center;justify-content:center;font-size:28px;flex:none}
+.albumnav{display:flex;gap:8px;margin:10px 0}
+.albumnav button{flex:1;padding:12px;border:0;border-radius:8px;background:#33395c;color:#fff;font-weight:700;cursor:pointer}
+.albumnav button:disabled{opacity:.4}
+.albumdots{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.adot{width:36px;height:36px;border-radius:50%;border:1.5px solid #4a5075;background:transparent;color:#fff;font-weight:700;cursor:pointer}
+.adot.done{background:#20df67;border-color:#20df67;color:#06260f}
+.adot.part{border-color:#ff7a3d;color:#ff7a3d}
+.adot.cur{box-shadow:0 0 0 3px #7c22d6}
+#votebody.timeup{pointer-events:none;opacity:.55}
+#albumAdmin .abar{height:8px;border-radius:4px;background:#222743;margin:8px 0}
+#albumAdmin .abar i{display:block;height:8px;border-radius:4px;background:#20df67}
+#albumAdmin .arow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+#albumAdmin select{padding:10px;border-radius:8px;border:0;background:#222743;color:#fff}
+</style>
 </head>
 <body>
 <div id="landing" class="landing">
@@ -143,7 +163,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <section id="live" class="page">
 <div class="card">
 <h2>🎶 ORDEN DE PARTICIPANTES</h2>
-<div class="notice" style="margin-bottom:10px">El botón VOTAR se activa solo para quien esté cantando ahora.</div>
+<div class="notice" style="margin-bottom:10px">Primero el show. Cuando terminen todos, se abre la votación y calificas a todos los participantes en un solo álbum.</div>
 <div id="rosterList"></div>
 </div>
 <div class="grid section">
@@ -164,15 +184,20 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <div class="commentbox" id="commentbox"><input id="commentInput" placeholder="Escribe un comentario…" maxlength="140"><button onclick="sendComment()">➤</button></div>
 </div>
 <div class="card" id="votepanel"><h2>🎙️ TU VOTACIÓN</h2>
-<div id="voteCountdown" class="vote-countdown hidden">⏱️ --s para votar</div>
-<div class="notice" id="voteLockedMsg">🔒 La votación aún no está abierta para este participante.</div>
+<div id="voteCountdown" class="vote-countdown hidden">⏱️ --:-- para votar</div>
+<div class="notice" id="voteLockedMsg">🔒 La votación general se abre cuando terminen todos de cantar.</div>
 <div id="votebody" class="hidden">
 <div class="namebox"><input id="voterName" placeholder="Tu nombre o apodo" maxlength="40"><button class="primary blue" id="editNameBtn" style="display:none" onclick="editName()">✎</button></div>
-<div class="sub">Toca el número (1 a 10) en cada categoría — la última es secreta 🤫</div>
+<div class="sub">Califica de 1 a 10. La última categoría es secreta 🤫 Tus notas se guardan solas y puedes cambiarlas hasta que cierre la votación.</div>
+<div class="albumhead"><span id="albumPos">Tarjeta 1 de 13</span><span id="albumSaved"></span></div>
+<div class="albumbar"><i id="albumBarFill"></i></div>
+<div class="albumcard"><div class="albumav" id="albumAv">🎤</div><div><b id="albumName">—</b><div class="sub" id="albumSong"></div></div></div>
 <div id="ratings" class="rating"></div>
 <div class="total">TOTAL <small>(de 30 puntos)</small><br><b id="total">0</b></div>
-<button class="primary green submit" id="submitBtn" onclick="submitVote()">ENVIAR VOTO ➤</button>
-<div class="notice">🔒 Tu voto queda registrado con tu nombre y no se puede modificar.</div>
+<div class="albumnav"><button type="button" id="albumPrev" onclick="stepCard(-1)">◀ Anterior</button><button type="button" id="albumNext" onclick="stepCard(1)">Siguiente ▶</button></div>
+<div class="albumdots" id="albumDots"></div>
+<div class="sub" id="albumProgress"></div>
+<button class="primary green submit" id="submitBtn" onclick="finishVoting()">TERMINÉ DE VOTAR ✓</button>
 </div>
 </div>
 </div>
@@ -197,6 +222,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <button onclick="adminTab('votersTab',this)">Quién votó</button>
 </div>
 <div id="plist">
+<div class="quickctrl" id="albumAdmin"></div>
 <div class="quickctrl" id="quickCtrl">
   <div><div class="qc-label">EN ESCENA AHORA</div><div class="qc-name" id="qcName">— nadie en vivo —</div></div>
   <div id="qcIdleRow" class="qc-idle-row hidden">
@@ -216,6 +242,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <button class="primary" style="background:#a82aff" onclick="showSecretTable()">📊 TABLA FINAL (revelar puntaje secreto)</button>
 <button class="primary" style="background:#33395c" onclick="hideWinner()">✖ Ocultar resultado</button>
 <button class="primary" style="background:#33395c" onclick="reopenContest()">↩ Reabrir concurso</button>
+<button class="primary" style="background:#33395c" onclick="backToShow()">🎤 VOLVER AL SHOW (fase de show)</button>
 <hr style="border-color:#333756;width:100%">
 <input id="newPin1" placeholder="Nuevo PIN">
 <button class="primary" style="background:#33395c" onclick="changePin()">CAMBIAR PIN</button>
@@ -224,7 +251,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </div>
 </div>
 </section>
-<section id="help" class="page hidden"><div class="card"><h1>ℹ️ Cómo funciona</h1><ol><li>Cada participante interpreta una canción.</li><li>El administrador marca quién está "en vivo" en la pestaña Admin.</li><li>El público escribe su nombre y califica de 1 a 10 en tres categorías (la última es secreta) (deslizando o escribiendo el número).</li><li>Cada persona vota una sola vez por cada participante (se identifica por su nombre).</li><li>Los votos se suman en tiempo real entre todos los celulares conectados.</li><li>El administrador puede agregar, editar y eliminar participantes con su PIN.</li></ol><p><b>Pantalla grande:</b> abre este mismo archivo agregando <code>?pantalla=resultados</code> al final del link para mostrar el ranking en un TV o proyector.</p></div></section>
+<section id="help" class="page hidden"><div class="card"><h1>ℹ️ Cómo funciona</h1><ol><li>Cada participante interpreta una canción.</li><li>El administrador marca quién está "en vivo" en la pestaña Admin.</li><li>Mientras cantan, el público solo reacciona y comenta. Al terminar el show se abre la votación general: cada persona califica de 1 a 10 a todos los participantes en tres categorías (la última es secreta) y puede cambiar sus notas hasta que cierre.</li><li>Cada persona vota una sola vez por cada participante (se identifica por su nombre).</li><li>Los votos se suman en tiempo real entre todos los celulares conectados.</li><li>El administrador puede agregar, editar y eliminar participantes con su PIN.</li></ol><p><b>Pantalla grande:</b> abre este mismo archivo agregando <code>?pantalla=resultados</code> al final del link para mostrar el ranking en un TV o proyector.</p></div></section>
 <div class="footer">🎵 ¡Que gane el mejor! 🎤 <span>Fiebre de Canto Familiar ❤️</span></div>
 </main></div><div id="toast" class="toast"></div>
 <div id="thanksOverlay" class="thanks-overlay hidden" onclick="this.classList.add('hidden')">
@@ -276,37 +303,26 @@ async function loadAll(){
   handleVotingTimer(prevOpen, prevPid);
   renderAll();
 }
-function handleVotingTimer(prevOpen, prevPid){
-  const nowOpen=!!state.settings.voting_open;
-  const pid=state.settings.current_participant_id ?? null;
-  if(nowOpen && (!prevOpen || pid!==prevPid)){
-    const secs=Number(state.settings.seconds_per_vote)||60;
-    voteCountdownEnd=Date.now()+secs*1000;
-    autoCloseTriggered=false;
-  }
-  if(!nowOpen){
-    voteCountdownEnd=null;
-  }
+let timeUpShown=false;
+function phase(){return state.settings.voting_phase||'show'}
+function endMs(){const s=state.settings;return (phase()==='voting'&&s.voting_open&&s.vote_ends_at)?Date.parse(s.vote_ends_at):null}
+function timeUp(){const e=endMs();return e!==null&&Date.now()>e}
+function votingOpen(){return phase()==='voting'&&!!state.settings.voting_open&&!timeUp()}
+function fmtMS(ms){const t=Math.max(0,Math.round(ms/1000));return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
+function handleVotingTimer(){
+  const e=endMs();
+  if(e!==voteCountdownEnd) timeUpShown=false;
+  voteCountdownEnd=e;
 }
 function updateCountdown(){
   const el=document.getElementById('voteCountdown');
-  if(!el) return;
-  if(voteCountdownEnd===null){
-    el.classList.add('hidden');
-    return;
-  }
-  const remaining=Math.max(0,Math.round((voteCountdownEnd-Date.now())/1000));
-  el.classList.remove('hidden');
-  el.textContent='⏱️ '+remaining+'s para votar';
-  el.classList.toggle('urgent',remaining<=10);
-  if(remaining<=0){
-    voteCountdownEnd=null;
-    el.classList.add('hidden');
-    if(isAdmin && adminPin && !autoCloseTriggered){
-      autoCloseTriggered=true;
-      closeVoting();
-    }
-  }
+  const adm=document.getElementById('albumAdminTimer');
+  const e=voteCountdownEnd;
+  if(e===null||e===undefined){ if(el) el.classList.add('hidden'); if(adm) adm.textContent=''; return; }
+  const left=e-Date.now();
+  if(el){ el.classList.remove('hidden'); el.textContent=left>0?('⏱️ '+fmtMS(left)+' para votar'):'⏰ Tiempo cumplido'; el.classList.toggle('urgent',left<=30000); }
+  if(adm) adm.textContent=left>0?('Quedan '+fmtMS(left)):'⏰ Tiempo cumplido: cierra cuando estés listo';
+  if(left<=0 && !timeUpShown){ timeUpShown=true; renderAll(); }
 }
 function currentParticipant(){return state.participants.find(p=>p.id===state.settings.current_participant_id)}
 function miniAvatar(p){return p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji}
@@ -316,31 +332,38 @@ function hasVoted(id,name){const key=(name||'').trim().toLowerCase();const dev=d
 function renderAll(){
   document.getElementById('eventName').textContent=state.settings.event_name||'La familia está votando';
   document.getElementById('voters').textContent=new Set(state.votes.map(v=>v.voter_name_key)).size;
+  syncAlbum();
   renderCurrent();
   renderRoster();
   renderRatings();
+  renderAlbum();
   renderRanking();
   renderPeople();
   renderAdminList();
+  renderAlbumAdmin();
   renderVotersTable();
   renderLiveVoterList();
 }
 function renderRoster(){
-  const cp=currentParticipant();
+  const ph=phase(), s=state.settings;
+  const liveIdx=state.participants.findIndex(p=>p.id===s.current_participant_id);
   document.getElementById('rosterList').innerHTML = state.participants.map((p,i)=>{
-    const isLive = cp && cp.id===p.id;
-    const open = isLive && state.settings.voting_open;
-    const hasVotes = votesFor(p.id).length>0;
-    let statusHtml;
-    if(open) statusHtml='<span class="rstat rstat-open">🟢 VOTANDO AHORA</span>';
-    else if(isLive) statusHtml='<span class="rstat rstat-live">🎤 EN VIVO</span>';
-    else if(hasVotes) statusHtml='<span class="rstat rstat-done">✅ YA CANTÓ</span>';
-    else statusHtml='<span class="rstat rstat-pending">⏳ PENDIENTE</span>';
-    return `<div class="rosterrow ${open?'ropen':''}">
+    let st, btn='', cls='';
+    if(ph==='show'){
+      if(i===liveIdx) st='<span class="rstat rstat-live">🎤 EN VIVO</span>';
+      else if(liveIdx>=0 && i<liveIdx) st='<span class="rstat rstat-done">✅ YA CANTÓ</span>';
+      else st='<span class="rstat rstat-pending">⏳ PENDIENTE</span>';
+    } else if(ph==='voting'){
+      const sv=isSaved(p);
+      st=sv?'<span class="rstat rstat-done">✅ VOTADO</span>':'<span class="rstat rstat-open">🗳️ SIN VOTAR</span>';
+      if(!sv) cls='ropen';
+      if(votingOpen()) btn=`<button class="primary green rvote" onclick="gotoCard(${i})">${sv?'EDITAR':'VOTAR'}</button>`;
+    } else st='<span class="rstat rstat-done">🏁 FINAL</span>';
+    return `<div class="rosterrow ${cls}">
       <div class="rnum" style="background:${colorFor(p.id)}">${String(i+1).padStart(2,'0')}</div>
       <div class="rmini">${miniAvatar(p)}</div>
-      <div class="rinfo"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div>${statusHtml}</div>
-      <button class="primary green rvote" ${open?'':'disabled'} onclick="scrollToVote()">VOTAR</button>
+      <div class="rinfo"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div>${st}</div>
+      ${btn}
     </div>`;
   }).join('') || '<div class="notice">Aún no hay participantes.</div>';
 }
@@ -349,28 +372,32 @@ let lastLiveId=null;
 const PALETTE=['#ff3fa4','#22d9ff','#ffc42e','#20df67','#7c22d6','#ff7a3d','#3fa9ff','#ff4d6d'];
 function colorFor(id){return PALETTE[(id||0)%PALETTE.length]}
 function renderCurrent(){
-  const p=currentParticipant();
-  if(p && p.id!==lastLiveId){ratings=[null,null,null];touched=[false,false,false]}
-  lastLiveId=p?p.id:lastLiveId;
+  const ph=phase();
+  const inShow=ph==='show';
+  const p=inShow?currentParticipant():null;
+  document.getElementById('currentCard').style.display=inShow?'':'none';
   const photoHtml=p?(p.photo_url?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:p.emoji):'🎤';
   document.getElementById('avatar').innerHTML=(p?`<span class="numchip">${String(state.participants.findIndex(x=>x.id===p.id)+1).padStart(2,'0')}</span>`:'')+photoHtml;
   document.getElementById('currentCard').style.setProperty('--pcolor',p?colorFor(p.id):'#a82aff');
   document.getElementById('currentName').textContent=p?p.name:'—';
   document.getElementById('currentSong').textContent=p?('🎵 '+p.song):'Esperando al administrador…';
-  const open=!!(p && state.settings.voting_open);
   const statusEl=document.getElementById('voteStatus');
-  statusEl.textContent = !p ? '' : (open?'🟢 VOTACIÓN ABIERTA':'🔴 AÚN NO ABRE LA VOTACIÓN');
-  statusEl.style.color = open?'#20df67':'#ff4545';
-  document.getElementById('voteLockedMsg').classList.toggle('hidden',open);
-  document.getElementById('votebody').classList.toggle('hidden',!open);
-  document.getElementById('submitBtn').disabled=!open;
+  statusEl.textContent=p?'🎤 ¡Disfruta el show y reacciona!':'';
+  statusEl.style.color='#ffc42e';
   document.getElementById('reactbar').style.display=p?'flex':'none';
   document.getElementById('commentbox').style.display=p?'flex':'none';
-  if(isAdmin){
-    document.getElementById('adminVoteControls').classList.toggle('hidden',!p);
-    document.querySelector('#adminVoteControls button:nth-child(1)').style.display=open?'inline-block':'none';
-    document.querySelector('#adminVoteControls button:nth-child(2)').style.display=open?'none':'inline-block';
-  }
+  const up=ph==='voting'&&timeUp();
+  const open=votingOpen();
+  const lock=document.getElementById('voteLockedMsg');
+  lock.textContent = ph==='show' ? '🔒 La votación general se abre cuando terminen todos de cantar. ¡Disfruta el show!'
+    : ph==='done' ? '🏁 La votación cerró. ¡Gracias por votar! Mira la pantalla grande.'
+    : '⏰ Se acabó el tiempo. Tus notas guardadas ya quedaron registradas.';
+  lock.classList.toggle('hidden',open);
+  const body=document.getElementById('votebody');
+  body.classList.toggle('hidden',!(ph==='voting'));
+  body.classList.toggle('timeup',up);
+  lock.classList.toggle('hidden',ph==='voting'&&!up);
+  document.getElementById('adminVoteControls').classList.add('hidden');
 }
 function tick(){
   document.getElementById('clock').textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
@@ -378,43 +405,114 @@ function tick(){
 }
 setInterval(tick,500);
 function renderRatings(){
-  document.getElementById('ratings').innerHTML=cats.map((c,i)=>{
-    const val=ratings[i];
-    const pending=!touched[i];
+  const p=curCard();
+  const el=document.getElementById('ratings');
+  if(!p){ el.innerHTML=''; return; }
+  const r=cardR(p);
+  el.innerHTML=cats.map((c,i)=>{
+    const val=r[i];
+    const pending=val==null;
     const nums=[1,2,3,4,5,6,7,8,9,10].map(n=>`<button type="button" class="numbtn ${val===n?'on':''}" onclick="rate(${i},${n})">${n}</button>`).join('');
     return `<div class="row" style="${pending?'border-color:#ff7a3d':''}"><label>${c[0]} ${c[1]} ${pending?'<span style="color:#ff7a3d;font-size:12px">— falta calificar</span>':'✅'}</label>
     <div class="numpick">${nums}</div></div>`;
   }).join('');
-  const done=touched.filter(Boolean).length;
-  document.getElementById('total').textContent = done<3 ? `Faltan ${3-done}/3` : ratings.reduce((a,b)=>a+Number(b),0);
-  document.getElementById('submitBtn').disabled = !currentParticipant() || !state.settings.voting_open || !allTouched();
+  const done=r.filter(x=>x!=null).length;
+  document.getElementById('total').textContent = done<3 ? `Faltan ${3-done}/3` : r.reduce((a,b)=>a+Number(b),0);
 }
-function rate(i,v){v=Math.max(1,Math.min(10,Math.round(Number(v)||1)));ratings[i]=v;touched[i]=true;playClick();vib(15);renderRatings()}
-async function submitVote(){
-  const p=currentParticipant();
-  if(!p) return toast('Aún no hay participante en vivo',true);
-  if(!state.settings.voting_open) return toast('🔒 La votación está cerrada',true);
-  const name=document.getElementById('voterName').value.trim();
-  if(!name) return toast('Escribe tu nombre o apodo',true);
-  if(!allTouched()) return toast('⚠️ Debes calificar las 3 categorías',true);
-  localStorage.setItem('fc_voter_name',name);
-  lockName();
-  if(hasVoted(p.id,name)) return toast('⚠️ Ya votaste por este participante',true);
-  const {error}=await sb.from('votes').insert({
-    participant_id:p.id, voter_name:name, device_id:deviceId(), scores:ratings
+function rate(i,v){
+  if(!votingOpen()) return toast('🔒 La votación no está abierta',true);
+  const p=curCard(); if(!p) return;
+  v=Math.max(1,Math.min(10,Math.round(Number(v)||1)));
+  cardR(p)[i]=v; playClick(); vib(15);
+  renderRatings(); renderAlbum();
+  if(cardR(p).every(x=>x!=null)) queueSave(p);
+}
+const album={idx:0,r:{},timer:null};
+function myVoteFor(pid){const d=deviceId();return state.votes.find(v=>v.device_id===d&&v.participant_id===pid)}
+function syncAlbum(){
+  state.participants.forEach(p=>{
+    const v=myVoteFor(p.id);
+    if(v && !album.r[p.id]) album.r[p.id]=(v.scores||[]).map(Number);
   });
+  if(album.idx>=state.participants.length) album.idx=Math.max(0,state.participants.length-1);
+}
+function isSaved(p){
+  const r=album.r[p.id];
+  if(!r||!r.every(x=>x!=null)) return false;
+  const v=myVoteFor(p.id);
+  return !!v && JSON.stringify((v.scores||[]).map(Number))===JSON.stringify(r);
+}
+function curCard(){return state.participants[album.idx]||null}
+function cardR(p){return album.r[p.id]||(album.r[p.id]=[null,null,null])}
+function setSaveState(t){const e=document.getElementById('albumSaved');if(e)e.textContent=t}
+function renderAlbum(){
+  const ps=state.participants,n=ps.length,p=curCard();
+  if(!p) return;
+  document.getElementById('albumPos').textContent='Tarjeta '+(album.idx+1)+' de '+n;
+  const saved=ps.filter(isSaved).length;
+  document.getElementById('albumBarFill').style.width=(n?saved/n*100:0)+'%';
+  document.getElementById('albumAv').innerHTML=miniAvatar(p);
+  document.getElementById('albumName').textContent=p.name;
+  document.getElementById('albumSong').textContent='🎵 '+p.song+' · lugar '+(album.idx+1);
+  document.getElementById('albumDots').innerHTML=ps.map((x,i)=>{
+    const part=(album.r[x.id]||[]).some(v=>v!=null);
+    return `<button type="button" class="adot ${isSaved(x)?'done':(part?'part':'')} ${i===album.idx?'cur':''}" onclick="gotoCard(${i})">${i+1}</button>`;
+  }).join('');
+  document.getElementById('albumProgress').textContent = saved===n&&n>0 ? '🎉 Ya calificaste a todos. Puedes cambiar cualquier nota hasta que cierre la votación.' : 'Faltan '+(n-saved)+' por calificar';
+  document.getElementById('submitBtn').textContent = saved===n&&n>0 ? 'LISTO, TERMINÉ ✓' : 'TERMINÉ DE VOTAR (faltan '+(n-saved)+')';
+  document.getElementById('albumPrev').disabled=album.idx<=0;
+  document.getElementById('albumNext').disabled=album.idx>=n-1;
+  if(isSaved(p)) setSaveState('✓ Guardado');
+}
+function gotoCard(i){
+  if(i<0||i>=state.participants.length) return;
+  album.idx=i; renderRatings(); renderAlbum();
+  document.getElementById('votepanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function stepCard(d){gotoCard(album.idx+d)}
+function queueSave(p){clearTimeout(album.timer);setSaveState('Guardando…');album.timer=setTimeout(()=>saveCard(p),350)}
+async function saveCard(p){
+  const r=album.r[p.id];
+  if(!r||!r.every(x=>x!=null)) return true;
+  if(isSaved(p)){ setSaveState('✓ Guardado'); return true; }
+  const name=document.getElementById('voterName').value.trim();
+  if(!name){ setSaveState('Falta tu nombre'); toast('✍️ Escribe tu nombre arriba para guardar tus notas',true); document.getElementById('voterName').focus(); return false; }
+  localStorage.setItem('fc_voter_name',name); lockName();
+  const {error}=await sb.rpc('cast_vote',{p_participant_id:p.id,p_voter_name:name,p_device_id:deviceId(),p_scores:r});
   if(error){
-    if(error.code==='23505') toast('⚠️ Ya votaste por este participante',true);
-    else toast('Error al votar: '+error.message,true);
-    return;
+    const m=error.message||'';
+    setSaveState('No se guardó');
+    if(m.includes('voting_closed')) toast('🔒 La votación ya cerró',true);
+    else if(m.includes('name_taken')){ toast('⚠️ Ese nombre ya lo usó otra persona. Toca ✎ y agrega tu apellido o un apodo',true); editName(); }
+    else toast('Error al guardar: '+m,true);
+    return false;
   }
-  toast('✅ ¡Voto registrado!');
+  setSaveState('✓ Guardado'); vib(25);
+  await loadAll();
+  return true;
+}
+async function flushUnsaved(){
+  for(const p of state.participants){
+    const r=album.r[p.id];
+    if(r&&r.every(x=>x!=null)&&!isSaved(p)){ if(!(await saveCard(p))) return false; }
+  }
+  return true;
+}
+async function finishVoting(){
+  if(!votingOpen()) return toast('🔒 La votación no está abierta',true);
+  const name=document.getElementById('voterName').value.trim();
+  if(!name){ toast('✍️ Escribe tu nombre arriba',true); document.getElementById('voterName').focus(); return; }
+  if(!(await flushUnsaved())) return;
+  const miss=state.participants.findIndex(p=>!isSaved(p));
+  if(miss>=0){ toast('Te falta calificar a '+state.participants[miss].name,true); gotoCard(miss); return; }
   playSuccess(); vib([30,40,30,40,80]);
   if(window.confetti) confetti({particleCount:120,spread:80,origin:{y:0.6}});
-  showThanks(p,name);
-  ratings=[null,null,null];
-  touched=[false,false,false];
-  await loadAll();
+  const o=document.getElementById('thanksOverlay');
+  document.getElementById('thanksPhoto').innerHTML='🎤<span class="checkbadge">✓</span>';
+  document.getElementById('thanksText').textContent='Gracias '+name+', ya votaste por los '+state.participants.length+' participantes 🎉 Puedes cambiar tus notas hasta que cierre la votación.';
+  o.classList.remove('hidden');
+  clearTimeout(window._thanksTimer);
+  window._thanksTimer=setTimeout(()=>o.classList.add('hidden'),3200);
 }
 function showThanks(p,name){
   const o=document.getElementById('thanksOverlay');
@@ -445,6 +543,13 @@ function deviceId(){let id=localStorage.getItem('fc_device');if(!id){id='D'+Math
 function lockName(){document.getElementById('voterName').readOnly=true;document.getElementById('editNameBtn').style.display='inline-block'}
 function editName(){document.getElementById('voterName').readOnly=false;document.getElementById('voterName').focus()}
 function renderRanking(){
+  const reveal=isAdmin||(phase()==='done'&&!!state.settings.show_secret_table);
+  if(!reveal){
+    const msg='<div class="notice">🔒 El ranking se revela al final, en la pantalla grande.</div>';
+    document.getElementById('ranking').innerHTML=msg;
+    document.getElementById('bigRanking').innerHTML=msg;
+    return;
+  }
   const list=[...state.participants].sort((a,b)=>sumFor(b.id)-sumFor(a.id));
   const rowHtml=(p,i,big)=>`<div class="rank ${i===0?'first':''}"><div class="place">${big?(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1):i+1}</div><div class="mini">${miniAvatar(p)}</div><div class="rname"><b>${p.name}</b><div class="sub">${votesFor(p.id).length} votos</div></div><div class="points">${sumFor(p.id).toFixed(0)} pts</div></div>`;
   document.getElementById('ranking').innerHTML=list.map((p,i)=>rowHtml(p,i,false)).join('')||'<div class="notice">Aún no hay participantes.</div>';
@@ -509,13 +614,12 @@ function renderAdminList(){
   document.getElementById('adminList').innerHTML=state.participants.map((p,i)=>{
     const isLive=state.settings.current_participant_id===p.id;
     const open=isLive && state.settings.voting_open;
-    const voteBtn = !isLive ? '' : (open
-      ? `<button class="vote-btn close" onclick="closeVoting()">🔒 Cerrar votación</button>`
-      : `<button class="vote-btn open" onclick="reopenVoting()">🗳️ Abrir votación</button>`);
+    const voteBtn='';
+    const inShow=phase()==='show';
     return `<div class="adminrow ${isLive?'adminrow-live':''}"><div class="place">${String(i+1).padStart(2,'0')}</div><div class="mini">${miniAvatar(p)}</div><div class="rname"><b>${p.name}</b><div class="sub">🎵 ${p.song}</div></div>
     <div class="actions">
-      <button class="live-btn ${isLive?'on':''}" onclick="setLive(${p.id})">${isLive?'🔴 EN VIVO':'🎤 Poner en vivo'}</button>
-      ${isLive?'<button class="vote-btn pause" onclick="clearLive()">⏸ Quitar de vivo</button>':''}
+      ${inShow?`<button class="live-btn ${isLive?'on':''}" onclick="setLive(${p.id})">${isLive?'🔴 EN VIVO':'🎤 Poner en vivo'}</button>`:''}
+      ${inShow&&isLive?'<button class="vote-btn pause" onclick="clearLive()">⏸ Quitar de vivo</button>':''}
       ${voteBtn}
       <button class="edit" onclick="editPerson(${p.id})">✎</button>
       <button class="trivia" onclick="editTrivia(${p.id})">🎲</button>
@@ -560,6 +664,54 @@ async function editTrivia(id){
 async function deletePerson(id){
   if(!confirm('¿Eliminar participante y sus votos?'))return;
   try{ await rpc('admin_delete_participant',{p_id:id}); await loadAll(); toast('🗑 Eliminado');}catch(e){}
+}
+function renderAlbumAdmin(){
+  const el=document.getElementById('albumAdmin'); if(!el) return;
+  const ph=phase(), n=state.participants.length;
+  const by={}; state.votes.forEach(v=>{by[v.voter_name_key]=(by[v.voter_name_key]||0)+1});
+  const voters=Object.keys(by).length, done=Object.values(by).filter(c=>c>=n).length;
+  const prevMins=(document.getElementById('albumMins')||{}).value||'15';
+  let h='';
+  if(ph==='show'){
+    h=`<div class="qc-label">VOTACIÓN GENERAL</div><div class="qc-name">Fase 1 · Show en vivo</div>
+    <div class="sub" style="margin-top:6px">Mientras cantan nadie ve votos ni puntajes. Cuando terminen todos, abre la votación para calificar a los ${n} participantes.</div>
+    <div class="arow"><select id="albumMins"><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option></select>
+    <button class="primary green" onclick="openAlbum()">🗳️ ABRIR VOTACIÓN GENERAL</button></div>`;
+  } else if(ph==='voting'){
+    const pct=voters?Math.round(Object.values(by).reduce((a,c)=>a+Math.min(c,n),0)/(voters*n)*100):0;
+    h=`<div class="qc-label">VOTACIÓN GENERAL</div><div class="qc-name">Fase 2 · Votación abierta</div>
+    <div class="sub" id="albumAdminTimer" style="margin-top:6px"></div>
+    <div class="abar"><i style="width:${pct}%"></i></div>
+    <div class="sub">${voters} persona${voters===1?'':'s'} votando · ${done} ya terminaron los ${n}</div>
+    <div class="arow"><button class="primary blue" onclick="extendAlbum()">＋2 min</button>
+    <button class="primary" style="background:#ff4545" onclick="closeAlbum()">🔒 CERRAR VOTACIÓN</button></div>`;
+  } else {
+    h=`<div class="qc-label">VOTACIÓN GENERAL</div><div class="qc-name">Fase 3 · Votación cerrada</div>
+    <div class="sub" style="margin-top:6px">${voters} persona${voters===1?'':'s'} votaron · ${done} completaron los ${n}. Ve a Configuración para revelar el resultado.</div>
+    <div class="arow"><button class="primary blue" onclick="reopenAlbum()">↩ Reabrir 5 min</button></div>`;
+  }
+  el.innerHTML=h;
+  const sel=document.getElementById('albumMins'); if(sel) sel.value=prevMins;
+  updateCountdown();
+}
+async function openAlbum(){
+  const m=+((document.getElementById('albumMins')||{}).value||15);
+  if(!confirm('¿Abrir la votación general por '+m+' minutos? Ya no se podrá poner a nadie en vivo.')) return;
+  try{ await rpc('admin_open_album',{p_seconds:m*60}); await loadAll(); toast('🗳️ Votación general abierta'); }catch(e){}
+}
+async function reopenAlbum(){
+  try{ await rpc('admin_open_album',{p_seconds:300}); await loadAll(); toast('🗳️ Votación reabierta por 5 minutos'); }catch(e){}
+}
+async function extendAlbum(){
+  try{ await rpc('admin_extend_album',{p_seconds:120}); await loadAll(); toast('＋2 minutos de votación'); }catch(e){}
+}
+async function closeAlbum(){
+  if(!confirm('¿Cerrar la votación? La pantalla grande pasará a la tabla preliminar.')) return;
+  try{ await rpc('admin_close_album',{}); await loadAll(); toast('🔒 Votación cerrada'); }catch(e){}
+}
+async function backToShow(){
+  if(!confirm('¿Volver a la fase de show? Los votos guardados no se borran.')) return;
+  try{ await rpc('admin_back_to_show',{}); await loadAll(); toast('🎤 Volvimos al show'); }catch(e){}
 }
 async function setLive(id){
   try{ await rpc('admin_set_current',{p_id:id}); await loadAll(); toast('🎤 Participante en vivo actualizado');}catch(e){}
@@ -660,6 +812,7 @@ async function init(){
     }
   }
 }
+document.getElementById('voterName').addEventListener('change',()=>{ if(votingOpen()) flushUnsaved(); });
 init();
 </script>
 <script>
@@ -679,6 +832,7 @@ init();
      <div class="tv-stat">🎤 Faltan <b id="tvPending">--</b> por cantar</div>
      <div class="tv-stat">🏆 Récord de la noche: <b id="tvRecord">--</b></div>
    </div>
+   <div id="albumTV" class="hidden"><div class="atv-title">🗳️ ¡VOTACIÓN ABIERTA!</div><div class="atv-count" id="atvCount">--:--</div><div class="atv-bar"><i id="atvBar"></i></div><div class="atv-text" id="atvText">--</div><div class="atv-grid" id="atvGrid"></div><div class="atv-note">Califica a todos desde tu celular · puedes cambiar tus notas hasta que cierre · sin puntajes a la vista</div></div>
    <div id="normalView">
    <div class="current-display">
       <div class="display-label">🎙️ PARTICIPANTE EN ESCENA</div>
@@ -731,6 +885,7 @@ init();
    </div>
  </div>`;
  document.body.classList.add('big-mode');
+ document.head.insertAdjacentHTML('beforeend','<style>#albumTV{text-align:center;padding:2vh 3vw;color:#fff}#albumTV.hidden{display:none!important}.atv-title{font-size:5vh;font-weight:900;letter-spacing:.05em;margin-bottom:1vh}.atv-count{font-size:16vh;font-weight:900;line-height:1;margin:1vh 0}.atv-count.urgent{color:#ff4545;animation:pulseUrgentTV 1s infinite}.atv-bar{height:2.4vh;border-radius:2vh;background:rgba(255,255,255,.14);width:60%;margin:1vh auto}.atv-bar i{display:block;height:100%;border-radius:2vh;background:#20df67;transition:width .6s}.atv-text{font-size:3.4vh;margin:1vh 0 2vh;opacity:.95}.atv-grid{display:flex;flex-wrap:wrap;gap:1.4vh 1.6vw;justify-content:center}.atv-item{width:10vw;text-align:center;font-size:1.8vh}.atv-item .ph{width:8vh;height:8vh;border-radius:50%;overflow:hidden;margin:0 auto .6vh;background:#222743;display:flex;align-items:center;justify-content:center;font-size:4vh}.atv-note{margin-top:2vh;font-size:2.2vh;opacity:.75}</style>');
  const SUPABASE_URL='https://xhvqudltvtfsdnycigjp.supabase.co';
  const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
  const dsb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -740,6 +895,25 @@ init();
  let revealSequenceStarted=false, revealSequenceDone=false, initialLoad=true;
  const idlePhrases=['🔥 ¡La noche está que arde!','🎶 Prepárense para la próxima sorpresa…','👏 ¡Sigan animando desde sus casas!','🏆 ¿Quién se llevará el título esta noche?'];
  function wait(ms){return new Promise(r=>setTimeout(r,ms))}
+ function renderAlbumTV(parts,votes,sett){
+   const n=parts.length, by={};
+   (votes||[]).forEach(v=>{by[v.voter_name_key]=(by[v.voter_name_key]||0)+1});
+   const voters=Object.keys(by).length, done=Object.values(by).filter(c=>c>=n).length;
+   const avg=voters?Object.values(by).reduce((a,c)=>a+Math.min(c,n),0)/(voters*n):0;
+   window._atvEnd=sett.vote_ends_at?Date.parse(sett.vote_ends_at):null;
+   document.getElementById('atvBar').style.width=Math.round(avg*100)+'%';
+   document.getElementById('atvText').textContent=voters+' persona'+(voters===1?'':'s')+' votando · '+done+' ya terminaron los '+n+' participantes';
+   document.getElementById('atvGrid').innerHTML=parts.map(p=>'<div class="atv-item"><div class="ph">'+photoOfP(p)+'</div>'+p.name+'</div>').join('');
+   tickAlbumTV();
+ }
+ function tickAlbumTV(){
+   const el=document.getElementById('atvCount');
+   if(!el||window._atvEnd==null||window._atvEnd===undefined) return;
+   const left=window._atvEnd-Date.now();
+   const t=Math.max(0,Math.round(left/1000));
+   el.textContent=left>0?(String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')):'⏰ TIEMPO';
+   el.classList.toggle('urgent',left<=30000);
+ }
  function photoOfP(x){return x.photo_url?`<img src="${x.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:x.emoji}
  async function runDramaticReveal(sorted){
    revealSequenceStarted=true;
@@ -860,6 +1034,8 @@ init();
    firstRun=false;
    const photoOf=x=>x.photo_url?`<img src="${x.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:x.emoji;
    if(sett?.contest_closed){
+     document.getElementById('albumTV').classList.add('hidden');
+     document.getElementById('tvStatsBar').classList.remove('hidden');
      document.getElementById('normalView').classList.add('hidden');
      document.getElementById('finalView').classList.remove('hidden');
      const secretRevealed=!!sett.show_secret_table;
@@ -931,19 +1107,34 @@ init();
      document.getElementById('finalView').classList.add('hidden');
      document.getElementById('winnerOverlay').classList.add('hidden');
    }
+   const ph=sett?.voting_phase||'show';
+   const albumEl=document.getElementById('albumTV');
+   if(ph==='voting' && sett?.voting_open){
+     document.getElementById('normalView').classList.add('hidden');
+     document.getElementById('tvStatsBar').classList.add('hidden');
+     albumEl.classList.remove('hidden');
+     renderAlbumTV(parts,votes,sett);
+     fitTvScreen();
+     return;
+   }
+   albumEl.classList.add('hidden');
+   document.getElementById('tvStatsBar').classList.remove('hidden');
    // ---- Stats friquis: participantes restantes + récord de la noche ----
    const allWithScores=parts.map(p=>{
      const cs=catSums(votes,p.id);
      const cnt=(votes||[]).filter(v=>v.participant_id===p.id).length;
      return {p,cs,pub:cs[0]+cs[1],count:cnt};
    });
-   const pendingCount=allWithScores.filter(x=>x.p.id!==sett?.current_participant_id && x.count===0).length;
+   const liveIdxTv=parts.findIndex(p=>p.id===sett?.current_participant_id);
+   const pendingCount=liveIdxTv>=0?parts.length-liveIdxTv-1:parts.length;
    const tvPendingEl=document.getElementById('tvPending');
    if(tvPendingEl) tvPendingEl.textContent=pendingCount+'/'+parts.length;
    const withRecord=allWithScores.filter(x=>x.count>0);
    const recordHolder=withRecord.length?withRecord.reduce((best,cur)=>cur.pub>best.pub?cur:best):null;
    const tvRecordEl=document.getElementById('tvRecord');
    if(tvRecordEl) tvRecordEl.textContent=recordHolder?(recordHolder.p.name+' — '+recordHolder.pub+' pts'):'—';
+   const tvStatEls=document.querySelectorAll('.tv-stat'); if(tvStatEls[1]) tvStatEls[1].style.display='none';
+   const tvRightCol=document.querySelector('.tv-col-right'); if(tvRightCol) tvRightCol.style.display='none';
    const cp=parts.find(p=>p.id===sett?.current_participant_id);
    const curDisplayEl=document.querySelector('.current-display');
    if(curDisplayEl) curDisplayEl.classList.toggle('idle-mode',!cp);
@@ -1045,6 +1236,7 @@ init();
        cdEl.classList.toggle('urgent',remaining<=10);
      }
    }
+   tickAlbumTV();
    updateHypeMeter();
  },500);
  dsb.channel('fiebre-display')
