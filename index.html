@@ -238,9 +238,13 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <button class="primary" style="background:#33395c" onclick="resetVotes()">↻ BORRAR TODOS LOS VOTOS</button>
 <hr style="border-color:#333756;width:100%">
 <button class="primary" style="background:#ff4545" onclick="closeContest()">🏁 CERRAR CONCURSO (ya cantaron todos)</button>
-<button class="primary" style="background:#ffc42e;color:#241800" onclick="revealWinner()">🏆 CONOCER RESULTADO (revel épico)</button>
-<button class="primary" style="background:#a82aff" onclick="showSecretTable()">📊 TABLA FINAL (revelar puntaje secreto)</button>
-<button class="primary" style="background:#33395c" onclick="hideWinner()">✖ Ocultar resultado</button>
+<div class="sub" style="width:100%">💰 Premios que se muestran en la gala (en pesos)</div>
+<input id="prize1" type="number" min="0" step="500" placeholder="🥇 Premio 1er lugar" oninput="this.dataset.touched=1">
+<input id="prize2" type="number" min="0" step="500" placeholder="🥈 Premio 2do lugar" oninput="this.dataset.touched=1">
+<input id="prize3" type="number" min="0" step="500" placeholder="🥉 Premio 3er lugar" oninput="this.dataset.touched=1">
+<div class="sub" id="prizeTotal" style="width:100%"></div>
+<button class="primary" style="background:#ffc42e;color:#241800" onclick="savePrizes()">💰 GUARDAR PREMIOS</button>
+<div class="sub" style="width:100%">La gala final se maneja desde Participantes, en el recuadro de GALA FINAL, una vez cerrada la votación.</div>
 <button class="primary" style="background:#33395c" onclick="reopenContest()">↩ Reabrir concurso</button>
 <button class="primary" style="background:#33395c" onclick="backToShow()">🎤 VOLVER AL SHOW (fase de show)</button>
 <hr style="border-color:#333756;width:100%">
@@ -303,6 +307,47 @@ async function loadAll(){
   handleVotingTimer(prevOpen, prevPid);
   renderAll();
 }
+const GALA=['Tabla preliminar','Luces bajas','Voz de Oro','Mejor Vestuario','El giro del secreto','3er lugar','Duelo final','El ganador','El podio','Tabla final'];
+function money(n){return '$'+Number(n||0).toLocaleString('es-CL')}
+function galaRank(parts,votes){
+  const rows=(parts||[]).map(p=>{
+    const cs=[0,0,0];
+    (votes||[]).filter(v=>v.participant_id===p.id).forEach(v=>{(v.scores||[]).forEach((x,i)=>{if(i<3)cs[i]+=Number(x)})});
+    const pub=cs[0]+cs[1], sec=cs[2];
+    return {p,cs,pub,sec,real:pub+sec,voz:cs[0]};
+  });
+  const byReal=(a,b)=>b.real-a.real||b.sec-a.sec||b.voz-a.voz;
+  const sorted=[...rows].sort(byReal);
+  const prelim=[...rows].sort((a,b)=>b.pub-a.pub||b.voz-a.voz);
+  let i=0;
+  while(i<sorted.length){
+    let j=i; while(j+1<sorted.length&&byReal(sorted[i],sorted[j+1])===0) j++;
+    for(let k=i;k<=j;k++){sorted[k].place=k+1;sorted[k].tied=j>i;sorted[k].groupFrom=i+1;sorted[k].groupTo=j+1}
+    i=j+1;
+  }
+  return {rows,sorted,prelim};
+}
+function prizeFor(r,prizes){
+  let tot=0;
+  for(let pos=r.groupFrom;pos<=r.groupTo;pos++){ if(pos<=3) tot+=Number(prizes[pos-1]||0) }
+  return Math.round(tot/(r.groupTo-r.groupFrom+1));
+}
+let lastGalaStep=null;
+function galaPhoneSync(){
+  const gs=state.settings.gala_step||0;
+  if(lastGalaStep!==null&&gs!==lastGalaStep&&gs>0){
+    vib([60,40,60]);
+    if(gs>=8&&window.confetti) confetti({particleCount:120,spread:90,origin:{y:0.5}});
+  }
+  lastGalaStep=gs;
+}
+function galaPhoneMsg(){
+  const gs=state.settings.gala_step||0;
+  if(gs===0) return '🏁 La votación cerró. ¡Gracias por votar! Mira la pantalla grande.';
+  if(gs<8) return '🎬 ¡Mira la pantalla grande! Se están revelando los resultados…';
+  const r=galaRank(state.participants,state.votes).sorted;
+  return '🏆 ¡Ganadores! 🥇 '+(r[0]?r[0].p.name:'—')+' · 🥈 '+(r[1]?r[1].p.name:'—')+' · 🥉 '+(r[2]?r[2].p.name:'—');
+}
 let timeUpShown=false;
 function phase(){return state.settings.voting_phase||'show'}
 function endMs(){const s=state.settings;return (phase()==='voting'&&s.voting_open&&s.vote_ends_at)?Date.parse(s.vote_ends_at):null}
@@ -341,6 +386,7 @@ function renderAll(){
   renderPeople();
   renderAdminList();
   renderAlbumAdmin();
+  renderPrizeCfg();
   renderVotersTable();
   renderLiveVoterList();
 }
@@ -372,6 +418,7 @@ let lastLiveId=null;
 const PALETTE=['#ff3fa4','#22d9ff','#ffc42e','#20df67','#7c22d6','#ff7a3d','#3fa9ff','#ff4d6d'];
 function colorFor(id){return PALETTE[(id||0)%PALETTE.length]}
 function renderCurrent(){
+  galaPhoneSync();
   const ph=phase();
   const inShow=ph==='show';
   const p=inShow?currentParticipant():null;
@@ -390,7 +437,7 @@ function renderCurrent(){
   const open=votingOpen();
   const lock=document.getElementById('voteLockedMsg');
   lock.textContent = ph==='show' ? '🔒 La votación general se abre cuando terminen todos de cantar. ¡Disfruta el show!'
-    : ph==='done' ? '🏁 La votación cerró. ¡Gracias por votar! Mira la pantalla grande.'
+    : ph==='done' ? galaPhoneMsg()
     : '⏰ Se acabó el tiempo. Tus notas guardadas ya quedaron registradas.';
   lock.classList.toggle('hidden',open);
   const body=document.getElementById('votebody');
@@ -686,13 +733,44 @@ function renderAlbumAdmin(){
     <div class="arow"><button class="primary blue" onclick="extendAlbum()">＋2 min</button>
     <button class="primary" style="background:#ff4545" onclick="closeAlbum()">🔒 CERRAR VOTACIÓN</button></div>`;
   } else {
-    h=`<div class="qc-label">VOTACIÓN GENERAL</div><div class="qc-name">Fase 3 · Votación cerrada</div>
-    <div class="sub" style="margin-top:6px">${voters} persona${voters===1?'':'s'} votaron · ${done} completaron los ${n}. Ve a Configuración para revelar el resultado.</div>
-    <div class="arow"><button class="primary blue" onclick="reopenAlbum()">↩ Reabrir 5 min</button></div>`;
+    const gs=state.settings.gala_step||0;
+    const rk=galaRank(state.participants,state.votes).sorted;
+    let notes='';
+    for(let i=0;i<Math.min(3,rk.length-1);i++){
+      const a=rk[i],b=rk[i+1];
+      if(a.real===b.real){
+        notes+= (a.tied&&a.groupTo>=i+2)
+          ? `<div class="sub" style="color:#ffc42e">⚠️ Empate absoluto entre ${a.p.name} y ${b.p.name}: se reparte el premio.</div>`
+          : `<div class="sub" style="color:#ffc42e">⚖️ Empate en puntos entre ${a.p.name} y ${b.p.name}: gana ${a.p.name} por Desplante.</div>`;
+      }
+    }
+    h=`<div class="qc-label">GALA FINAL</div><div class="qc-name">Paso ${gs} de 9 · ${GALA[gs]}</div>
+    <div class="sub" style="margin-top:6px">${voters} persona${voters===1?'':'s'} votaron · ${done} completaron los ${n}.</div>${notes}
+    <div class="arow"><button class="primary blue" ${gs<=0?'disabled':''} onclick="galaGo(${gs-1})">◀</button>
+    <button class="primary green" style="flex:1" ${gs>=9?'disabled':''} onclick="galaGo(${gs+1})">${gs===0?'🎬 INICIAR GALA':(gs>=9?'GALA TERMINADA':'SIGUIENTE ▶ '+GALA[gs+1])}</button></div>
+    <div class="arow"><button class="primary" style="background:#33395c" onclick="galaGo(0)">↺ Reiniciar gala</button>
+    <button class="primary" style="background:#33395c" onclick="reopenAlbum()">↩ Reabrir votación 5 min</button></div>`;
   }
   el.innerHTML=h;
   const sel=document.getElementById('albumMins'); if(sel) sel.value=prevMins;
   updateCountdown();
+}
+async function galaGo(step){
+  try{ await rpc('admin_gala_set',{p_step:step}); await loadAll(); }catch(e){}
+}
+function renderPrizeCfg(){
+  const s=state.settings;
+  [1,2,3].forEach(i=>{const el=document.getElementById('prize'+i); if(el&&document.activeElement!==el&&!el.dataset.touched) el.value=(s['prize_'+i]!=null?s['prize_'+i]:'')});
+  const t=document.getElementById('prizeTotal');
+  if(t) t.textContent='Total en premios: '+money((s.prize_1||0)+(s.prize_2||0)+(s.prize_3||0))+' · Pozo estimado ('+state.participants.length+' × $5.000): '+money(state.participants.length*5000);
+}
+async function savePrizes(){
+  const v=[1,2,3].map(i=>Math.max(0,Math.round(Number(document.getElementById('prize'+i).value)||0)));
+  try{
+    await rpc('admin_set_prizes',{p_p1:v[0],p_p2:v[1],p_p3:v[2]});
+    [1,2,3].forEach(i=>{delete document.getElementById('prize'+i).dataset.touched});
+    await loadAll(); toast('💰 Premios guardados');
+  }catch(e){}
 }
 async function openAlbum(){
   const m=+((document.getElementById('albumMins')||{}).value||15);
@@ -895,6 +973,221 @@ init();
  let revealSequenceStarted=false, revealSequenceDone=false, initialLoad=true;
  const idlePhrases=['🔥 ¡La noche está que arde!','🎶 Prepárense para la próxima sorpresa…','👏 ¡Sigan animando desde sus casas!','🏆 ¿Quién se llevará el título esta noche?'];
  function wait(ms){return new Promise(r=>setTimeout(r,ms))}
+ const ENSAYO=params.get('ensayo')==='1'; let ensStep=0, ensSeed=1;
+ let galaTok=0, galaShownStep=-1, galaTimers=[];
+ document.head.insertAdjacentHTML('beforeend','<style>'+`#galaView{position:fixed;inset:0;z-index:9500;background:radial-gradient(ellipse at 50% 38%,#2a1060 0%,#0a0620 55%,#000 100%);color:#fff;display:flex;flex-direction:column;align-items:center;padding:3vh 3vw;overflow:hidden;text-align:center}
+#galaView.hidden{display:none!important}
+.gv-beams i{position:absolute;top:-10vh;width:18vw;height:130vh;background:linear-gradient(180deg,rgba(255,226,140,.55),rgba(255,226,140,0));transform-origin:50% 0;filter:blur(14px);opacity:.45;animation:gvSweep 7s ease-in-out infinite alternate}
+.gv-beams i:nth-child(1){left:10%}.gv-beams i:nth-child(2){left:41%;animation-delay:-2.3s}.gv-beams i:nth-child(3){left:72%;animation-delay:-4.6s}
+@keyframes gvSweep{from{transform:rotate(-22deg)}to{transform:rotate(22deg)}}
+.gv-vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.75) 100%);pointer-events:none}
+.gv-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}.gv-flash.go{animation:gvFl 1.1s ease-out}
+@keyframes gvFl{0%{opacity:.95}100%{opacity:0}}
+.gv-title{position:relative;font-size:5.8vh;font-weight:900;letter-spacing:.05em;text-shadow:0 0 3vh #a82aff;margin-top:1vh}
+.gv-sub{position:relative;font-size:2.8vh;opacity:.9;margin-top:.6vh;min-height:3.2vh}
+.gv-body{position:relative;flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
+.gv-big{font-size:8vh;font-weight:900}.gv-small{font-size:3.4vh;opacity:.85;margin-top:2vh}
+.gv-fade{animation:gvFade 2.5s both}.gv-fade2{animation:gvFade 2.5s 1.4s both}
+@keyframes gvFade{from{opacity:0}to{opacity:1}}
+.gv-hero{display:flex;flex-direction:column;align-items:center}
+.gv-crown{font-size:9vh;line-height:1;animation:gvFloat 2.4s ease-in-out infinite}
+@keyframes gvFloat{50%{transform:translateY(-1.4vh)}}
+.gv-pw{position:relative}
+.gv-photo{width:30vh;height:30vh;border-radius:50%;overflow:hidden;border:.7vh solid #ffc42e;box-shadow:0 0 6vh #ffc42e99;background:#222743;display:flex;align-items:center;justify-content:center;font-size:15vh;transition:filter 1.4s}
+.gv-photo.sm{width:24vh;height:24vh;font-size:12vh}
+.gv-photo.blur{filter:blur(2.2vh) brightness(.45)}
+.gv-photo img,.gv-ph img,.gv-pph img{width:100%;height:100%;object-fit:cover}
+.gv-q{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:17vh;font-weight:900;text-shadow:0 0 3vh #a82aff}
+.gv-name{font-size:7.6vh;font-weight:900;margin-top:1.8vh;min-height:9vh;text-shadow:0 0 2vh #a82aff;max-width:90vw}
+.gv-pts{font-size:4.8vh;color:#ffc42e;font-weight:800;min-height:5.6vh}
+.gv-prize{font-size:5.6vh;font-weight:900;color:#20df67;opacity:0;transform:translateY(3vh);transition:all .8s;margin-top:.8vh}.gv-prize.on{opacity:1;transform:none}
+.gv-second{margin-top:2.2vh;font-size:3.4vh;opacity:0;transition:opacity 1s}.gv-second.on{opacity:1}
+.gv-tblhead,.gv-row{display:flex;align-items:center;gap:1.4vw;width:80vw;padding:0 1.4vw}
+.gv-tblhead{font-size:2.1vh;opacity:.7;height:3.6vh}
+.gv-tblhead span:nth-child(1){width:4vw}.gv-tblhead span:nth-child(2){width:4.4vh}
+.gv-tbl{display:flex;flex-direction:column;gap:.5vh}
+.gv-row{background:rgba(255,255,255,.08);border-radius:1.2vh;font-size:2.9vh;will-change:transform}
+.gv-row.top3{background:rgba(255,196,46,.18);box-shadow:inset 0 0 0 .25vh #ffc42e88}
+.gv-row.flash{background:rgba(168,42,255,.55)}
+.gv-pl{width:4vw;font-weight:900;text-align:center}
+.gv-ph{width:4.2vh;height:4.2vh;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#222743;font-size:2.4vh;flex:none}
+.gv-nm{flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gv-ch{width:5.5vw;font-weight:800;font-size:2.3vh}.gv-ch.up{color:#20df67}.gv-ch.down{color:#ff4545}
+.gv-pb,.gv-sc,.gv-tt{width:8vw;text-align:right}
+.gv-sc{color:#a82aff;font-weight:800}.gv-sc.on{color:#ffc42e;animation:gvPopS .5s}
+.gv-tt{font-weight:900}.gv-tt.on{color:#20df67}
+@keyframes gvPopS{from{transform:scale(1.8)}to{transform:none}}
+.gv-duel{display:flex;align-items:center;gap:4vw}
+.gv-duelist{display:flex;flex-direction:column;align-items:center;gap:1.6vh;width:34vw}
+.gv-dname{font-size:5vh;font-weight:900}
+.gv-dbar{width:100%;height:3.4vh;background:rgba(255,255,255,.14);border-radius:2vh;overflow:hidden}
+.gv-dbar i{display:block;height:100%;width:10%;background:linear-gradient(90deg,#ff7a3d,#ffc42e);border-radius:2vh;transition:width .14s}
+.gv-vs{font-size:9vh;font-weight:900;color:#ff4545;text-shadow:0 0 3vh #ff4545;animation:gvPulse 1s infinite}
+@keyframes gvPulse{50%{transform:scale(1.15)}}
+.gv-podium{display:flex;align-items:flex-end;justify-content:center;gap:2.5vw;height:68vh}
+.gv-pcol{display:flex;flex-direction:column;align-items:center;width:26vw;animation:gvPop .9s both}
+.gv-pcol.p3{animation-delay:.3s}.gv-pcol.p2{animation-delay:1.5s}.gv-pcol.p1{animation-delay:2.9s}
+@keyframes gvPop{from{opacity:0;transform:translateY(8vh) scale(.8)}to{opacity:1;transform:none}}
+.gv-pph{width:15vh;height:15vh;border-radius:50%;overflow:hidden;border:.5vh solid #ffc42e;background:#222743;display:flex;align-items:center;justify-content:center;font-size:8vh}
+.gv-pcol.p1 .gv-pph{width:19vh;height:19vh}
+.gv-pnm{font-size:3.8vh;font-weight:900;margin-top:1vh}.gv-ppts{font-size:2.8vh;color:#ffc42e}.gv-ppr{font-size:3.8vh;color:#20df67;font-weight:900;margin-bottom:1vh}
+.gv-pblock{width:100%;height:var(--h);background:linear-gradient(180deg,#ffc42e,#b07a00);color:#2a1700;font-size:5.4vh;font-weight:900;display:flex;align-items:center;justify-content:center;border-radius:1.4vh 1.4vh 0 0}
+.gv-pcol.p2 .gv-pblock{background:linear-gradient(180deg,#e6ebf5,#8b93a8)}.gv-pcol.p3 .gv-pblock{background:linear-gradient(180deg,#e0a066,#8a5226)}
+.gv-ens{position:fixed;right:1vw;bottom:1vh;z-index:99999;background:rgba(0,0,0,.65);color:#ffc42e;padding:.8vh 1.2vw;border-radius:1vh;font-size:1.8vh}`+'</style>');
+ function galaClear(){galaTimers.forEach(t=>{clearInterval(t);clearTimeout(t)});galaTimers=[]}
+ function ensureGala(){
+   let g=document.getElementById('galaView'); if(g) return g;
+   g=document.createElement('div'); g.id='galaView'; g.className='hidden';
+   g.innerHTML='<div class="gv-beams"><i></i><i></i><i></i></div><div class="gv-vig"></div><div class="gv-title" id="gvTitle"></div><div class="gv-sub" id="gvSub"></div><div class="gv-body" id="gvBody"></div><div class="gv-flash" id="gvFlash"></div>';
+   document.body.appendChild(g); return g;
+ }
+ function hideGala(){galaTok++;galaClear();const g=document.getElementById('galaView');if(g)g.classList.add('hidden')}
+ function gvSet(t,s){document.getElementById('gvTitle').textContent=t;document.getElementById('gvSub').textContent=s||''}
+ const gvBody=()=>document.getElementById('gvBody');
+ function sleepG(ms,instant){return instant?Promise.resolve():new Promise(r=>{galaTimers.push(setTimeout(r,ms))})}
+ function gvCount(el,to,ms,fmt,instant){
+   return new Promise(res=>{
+     if(instant||to<=0){el.textContent=fmt(to);return res()}
+     const t0=performance.now();
+     const id=setInterval(()=>{const k=Math.min(1,(performance.now()-t0)/ms);el.textContent=fmt(Math.round(to*(1-Math.pow(1-k,3))));if(k>=1){clearInterval(id);res()}},40);
+     galaTimers.push(id);
+   });
+ }
+ function gvFlash(){const f=document.getElementById('gvFlash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go')}
+ function gvConf(n,y){try{if(window.confetti)confetti({particleCount:n||80,spread:90,origin:{y:y==null?0.45:y}})}catch(e){}}
+ function snd(f){try{f()}catch(e){}}
+ function heroHtml(p,blur,crown){
+   return '<div class="gv-hero">'+(crown?'<div class="gv-crown">👑</div>':'')+'<div class="gv-pw"><div class="gv-photo'+(blur?' blur':'')+'" id="gvPhoto">'+photoOfP(p)+'</div>'+(blur?'<span class="gv-q" id="gvQ">?</span>':'')+'</div><div class="gv-name" id="gvName"></div><div class="gv-pts" id="gvPts"></div><div class="gv-prize" id="gvPrize"></div></div>';
+ }
+ async function gvHeroReveal(tok,instant,nameText,ptsText,ptsVal,prizeText,big){
+   const ph=document.getElementById('gvPhoto'),q=document.getElementById('gvQ'),nm=document.getElementById('gvName'),pts=document.getElementById('gvPts'),pr=document.getElementById('gvPrize');
+   if(instant){nm.textContent=nameText}
+   else{ for(const ch of nameText){ if(tok!==galaTok) return; nm.textContent+=ch; snd(()=>beep(880,30,0,0.05)); await sleepG(70,instant); } }
+   if(tok!==galaTok) return;
+   ph.classList.remove('blur'); if(q) q.style.display='none';
+   if(!instant){ snd(playSuccess); gvConf(big?170:60); }
+   await sleepG(500,instant);
+   await gvCount(pts,ptsVal,1300,n=>n+ptsText,instant);
+   if(tok!==galaTok) return;
+   if(prizeText){ pr.textContent='💰 '+prizeText; pr.classList.add('on'); }
+ }
+ function galaData(parts,votes,sett){
+   const rk=galaRank(parts,votes);
+   return {...rk,voters:new Set((votes||[]).map(v=>v.voter_name_key)).size,prizes:[sett&&sett.prize_1!=null?sett.prize_1:35000,sett&&sett.prize_2!=null?sett.prize_2:20000,sett&&sett.prize_3!=null?sett.prize_3:10000]};
+ }
+ async function galaIntro(tok,instant,d){
+   gvSet('🎭 LA GALA DE LA VERDAD','Fiebre de Canto Familiar');
+   gvBody().innerHTML='<div class="gv-big gv-fade">Se apagan las luces…</div><div class="gv-small gv-fade2">'+d.sorted.length+' participantes · '+d.voters+' votantes</div>';
+   if(!instant){ const beat=()=>snd(()=>{beep(55,140,0,0.3);beep(48,160,0.2,0.25)}); beat(); galaTimers.push(setInterval(beat,1100)); }
+ }
+ async function galaSpecial(tok,instant,d,idx,title,sub,icon){
+   gvSet(icon+' '+title,sub);
+   const w=d.rows.reduce((b,c)=>(c.cs[idx]>0&&(!b||c.cs[idx]>b.cs[idx]||(c.cs[idx]===b.cs[idx]&&c.real>b.real)))?c:b,null);
+   if(!w){gvBody().innerHTML='<div class="gv-big">Sin votos</div>';return}
+   gvBody().innerHTML=heroHtml(w.p,!instant,false);
+   if(!instant){ snd(playDrumroll); await sleepG(2600,instant); if(tok!==galaTok) return; gvFlash(); }
+   await gvHeroReveal(tok,instant,w.p.name,' pts',w.cs[idx],null,false);
+ }
+ async function galaSecret(tok,instant,d){
+   gvSet('⚡ EL GIRO DEL SECRETO','Falta revelar el Desplante…');
+   const n=d.prelim.length, rh=Math.min(5.2,64/Math.max(1,n));
+   const rowHtml=(r,i)=>'<div class="gv-row" id="gvr'+r.p.id+'" style="height:'+rh+'vh"><span class="gv-pl">'+(i+1)+'</span><span class="gv-ph">'+photoOfP(r.p)+'</span><span class="gv-nm">'+r.p.name+'</span><span class="gv-ch" id="gvd'+r.p.id+'"></span><span class="gv-pb">'+r.pub+'</span><span class="gv-sc" id="gvs'+r.p.id+'">❓</span><span class="gv-tt" id="gvt'+r.p.id+'">'+r.pub+'</span></div>';
+   gvBody().innerHTML='<div class="gv-tblhead"><span></span><span></span><span class="gv-nm">PARTICIPANTE</span><span class="gv-ch"></span><span class="gv-pb">PÚBLICO</span><span class="gv-sc">SECRETO</span><span class="gv-tt">TOTAL</span></div><div class="gv-tbl" id="gvTbl">'+d.prelim.map(rowHtml).join('')+'</div>';
+   const settle=r=>{const s=document.getElementById('gvs'+r.p.id),t=document.getElementById('gvt'+r.p.id);s.textContent='+'+r.sec;s.classList.add('on');t.textContent=r.real;t.classList.add('on')};
+   const place=()=>d.sorted.forEach((r,i)=>{const row=document.getElementById('gvr'+r.p.id);row.querySelector('.gv-pl').textContent=i+1;row.classList.toggle('top3',i<3)});
+   const tbl=document.getElementById('gvTbl');
+   if(instant){ d.prelim.forEach(settle); d.sorted.forEach(r=>tbl.appendChild(document.getElementById('gvr'+r.p.id))); place(); return; }
+   await sleepG(2200,instant);
+   for(let i=n-1;i>=0;i--){
+     if(tok!==galaTok) return;
+     const r=d.prelim[i]; snd(()=>beep(440+(n-i)*30,120,0,0.08)); settle(r);
+     const row=document.getElementById('gvr'+r.p.id); row.classList.add('flash'); await sleepG(650,instant); row.classList.remove('flash');
+   }
+   await sleepG(1300,instant); if(tok!==galaTok) return;
+   const els=[...tbl.children]; const first=new Map(els.map(e=>[e,e.getBoundingClientRect().top]));
+   const prevIdx=new Map(d.prelim.map((r,i)=>[r.p.id,i]));
+   d.sorted.forEach(r=>tbl.appendChild(document.getElementById('gvr'+r.p.id)));
+   els.forEach(e=>{const dy=first.get(e)-e.getBoundingClientRect().top;e.style.transition='none';e.style.transform='translateY('+dy+'px)'});
+   void tbl.offsetWidth;
+   els.forEach(e=>{e.style.transition='transform 1.8s cubic-bezier(.2,.8,.2,1)';e.style.transform=''});
+   snd(playDrumroll);
+   await sleepG(1900,instant); if(tok!==galaTok) return;
+   place();
+   d.sorted.forEach((r,i)=>{const delta=prevIdx.get(r.p.id)-i;const c=document.getElementById('gvd'+r.p.id);if(delta>0){c.textContent='▲'+delta;c.className='gv-ch up'}else if(delta<0){c.textContent='▼'+(-delta);c.className='gv-ch down'}});
+   gvConf(40,0.2);
+ }
+ async function galaThird(tok,instant,d){
+   const r=d.sorted[2];
+   gvSet('🥉 EN TERCER LUGAR…','');
+   if(!r){gvBody().innerHTML='<div class="gv-big">—</div>';return}
+   gvBody().innerHTML=heroHtml(r.p,!instant,false);
+   if(!instant){ snd(playDrumroll); await sleepG(2400,instant); if(tok!==galaTok) return; gvFlash(); }
+   gvSet('🥉 EN TERCER LUGAR'+(r.tied?' · ¡EMPATE!':''),'');
+   await gvHeroReveal(tok,instant,r.p.name,' pts',r.real,money(prizeFor(r,d.prizes))+(r.tied?' (compartido)':''),false);
+ }
+ async function galaDuel(tok,instant,d){
+   gvSet('⚔️ DUELO FINAL','Solo uno se lleva el 1er lugar…');
+   const a=d.sorted[0], b=d.sorted[1];
+   if(!a||!b){gvBody().innerHTML='<div class="gv-big">—</div>';return}
+   const card=(r,id)=>'<div class="gv-duelist"><div class="gv-photo sm">'+photoOfP(r.p)+'</div><div class="gv-dname">'+r.p.name+'</div><div class="gv-dbar"><i id="'+id+'"></i></div></div>';
+   const flip=Math.random()<0.5, L=flip?b:a, R=flip?a:b;
+   gvBody().innerHTML='<div class="gv-duel">'+card(L,'gvbL')+'<div class="gv-vs">VS</div>'+card(R,'gvbR')+'</div>';
+   const bl=document.getElementById('gvbL'), br=document.getElementById('gvbR');
+   if(instant){bl.style.width='80%';br.style.width='80%';return}
+   snd(playDrumroll);
+   const t0=performance.now();
+   galaTimers.push(setInterval(()=>{const k=Math.min(1,(performance.now()-t0)/6000),base=10+70*k,j=Math.min(1,k*2);bl.style.width=(base+(Math.random()*14-7)*j)+'%';br.style.width=(base+(Math.random()*14-7)*j)+'%'},140));
+   galaTimers.push(setInterval(()=>snd(()=>beep(60,100,0,0.2)),900));
+ }
+ async function galaWinner(tok,instant,d){
+   const a=d.sorted[0], b=d.sorted[1];
+   if(!a){gvSet('—','');return}
+   const tie=a.tied&&a.groupTo>=2&&!!b;
+   gvSet(tie?'🤝 ¡INCREÍBLE! HAY…':'🥁 Y EL PRIMER LUGAR ES PARA…','');
+   gvBody().innerHTML=heroHtml(a.p,!instant,true)+'<div class="gv-second" id="gvSecond"></div>';
+   if(!instant){ snd(playDrumroll); await sleepG(3200,instant); if(tok!==galaTok) return; gvFlash(); snd(playApplause); }
+   gvSet(tie?'🏆 ¡EMPATE EN EL 1ER LUGAR!':'🏆 ¡GANÓ LA FIEBRE DE CANTO!','');
+   await gvHeroReveal(tok,instant,tie?(a.p.name+' y '+b.p.name):a.p.name,' pts',a.real,money(prizeFor(a,d.prizes))+(tie?' c/u':''),true);
+   if(tok!==galaTok) return;
+   if(!tie&&b){
+     await sleepG(2000,instant); if(tok!==galaTok) return;
+     const s=document.getElementById('gvSecond'); s.textContent='🥈 2° lugar: '+b.p.name+' · '+b.real+' pts · '+money(prizeFor(b,d.prizes)); s.classList.add('on');
+   }
+ }
+ async function galaPodium(tok,instant,d){
+   gvSet('🏆 LOS GANADORES DE LA FIEBRE DE CANTO 🏆','¡Gracias familia por esta noche!');
+   const a=d.sorted[0], b=d.sorted[1], c=d.sorted[2];
+   const col=(r,pl,h,medal)=>r?'<div class="gv-pcol p'+pl+'" style="--h:'+h+'vh"><div class="gv-pph">'+photoOfP(r.p)+'</div><div class="gv-pnm">'+r.p.name+'</div><div class="gv-ppts">'+r.real+' pts</div><div class="gv-ppr">'+money(prizeFor(r,d.prizes))+'</div><div class="gv-pblock">'+medal+' '+pl+'°</div></div>':'<div class="gv-pcol"></div>';
+   gvBody().innerHTML='<div class="gv-podium">'+col(b,2,17,'🥈')+col(a,1,26,'🥇')+col(c,3,11,'🥉')+'</div>';
+   if(instant) return;
+   snd(playApplause); gvConf(170,0.3);
+   galaTimers.push(setInterval(()=>gvConf(70,0.2+Math.random()*0.3),2300));
+ }
+ function runGalaStep(step,d,instant){
+   galaTok++; const tok=galaTok; galaClear();
+   ensureGala().classList.remove('hidden');
+   document.getElementById('gvFlash').classList.remove('go');
+   const table={
+     1:()=>galaIntro(tok,instant,d),
+     2:()=>galaSpecial(tok,instant,d,0,'VOZ DE ORO','La mejor voz de la noche…','🎤'),
+     3:()=>galaSpecial(tok,instant,d,1,'MEJOR VESTUARIO','El look más espectacular…','👗'),
+     4:()=>galaSecret(tok,instant,d),
+     5:()=>galaThird(tok,instant,d),
+     6:()=>galaDuel(tok,instant,d),
+     7:()=>galaWinner(tok,instant,d),
+     8:()=>galaPodium(tok,instant,d)
+   };
+   if(table[step]) Promise.resolve(table[step]()).catch(e=>console.error(e));
+ }
+ if(ENSAYO){
+   document.body.insertAdjacentHTML('beforeend','<div class="gv-ens">ENSAYO · → siguiente · ← atrás · R votos nuevos · haz clic una vez para activar el sonido</div>');
+   document.addEventListener('keydown',e=>{
+     if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ensStep=Math.min(9,ensStep+1);refresh();e.preventDefault()}
+     else if(e.key==='ArrowLeft'||e.key==='PageUp'){ensStep=Math.max(0,ensStep-1);refresh();e.preventDefault()}
+     else if(e.key==='r'||e.key==='R'){ensSeed++;galaShownStep=-1;refresh()}
+   });
+ }
+
  function renderAlbumTV(parts,votes,sett){
    const n=parts.length, by={};
    (votes||[]).forEach(v=>{by[v.voter_name_key]=(by[v.voter_name_key]||0)+1});
@@ -1016,12 +1309,19 @@ init();
  window.addEventListener('resize',fitTvScreen);
  async function refresh(){
    const wasInitialLoad=initialLoad; initialLoad=false;
-   const [{data:parts},{data:sett},{data:votes}]=await Promise.all([
+   const [{data:parts},{data:sett0},{data:votes0}]=await Promise.all([
      dsb.from('participants').select('*').order('position'),
      dsb.from('settings').select('*').eq('id',1).single(),
      dsb.from('votes').select('*')
    ]);
    if(!parts) return;
+   let sett=sett0, votes=votes0;
+   if(ENSAYO){
+     let sd=ensSeed*9301+49297; const rnd=()=>{sd=(sd*9301+49297)%233280;return sd/233280};
+     votes=[];
+     parts.forEach(p=>{const bias=3+rnd()*4; for(let k=0;k<18;k++){const sc=[0,1,2].map(()=>Math.max(1,Math.min(10,Math.round(bias+rnd()*4)))); votes.push({participant_id:p.id,voter_name_key:'v'+k,scores:sc,total:sc[0]+sc[1]+sc[2]})}});
+     sett={...(sett0||{}),contest_closed:true,voting_phase:'done',voting_open:false,gala_step:ensStep,show_secret_table:ensStep>=9,show_winner:false};
+   }
    const sumFor=id=>(votes||[]).filter(v=>v.participant_id===id).reduce((a,v)=>a+Number(v.total),0);
    const list=[...parts].sort((a,b)=>sumFor(b.id)-sumFor(a.id));
    if(!sett?.contest_closed && list.length && list[0] && sumFor(list[0].id)>0){
@@ -1034,6 +1334,16 @@ init();
    firstRun=false;
    const photoOf=x=>x.photo_url?`<img src="${x.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:x.emoji;
    if(sett?.contest_closed){
+     const gstep=sett.gala_step||0;
+     if(gstep>=1&&gstep<=8){
+       document.getElementById('albumTV').classList.add('hidden');
+       document.getElementById('normalView').classList.add('hidden');
+       document.getElementById('finalView').classList.add('hidden');
+       document.getElementById('tvStatsBar').classList.add('hidden');
+       if(galaShownStep!==gstep){ galaShownStep=gstep; runGalaStep(gstep,galaData(parts,votes,sett),wasInitialLoad); }
+       return;
+     }
+     if(galaShownStep!==-1){ galaShownStep=-1; hideGala(); }
      document.getElementById('albumTV').classList.add('hidden');
      document.getElementById('tvStatsBar').classList.remove('hidden');
      document.getElementById('normalView').classList.add('hidden');
@@ -1047,7 +1357,8 @@ init();
        return {p,cs,pub,sec,real:pub+sec};
      });
      document.getElementById('finalTitle').textContent=secretRevealed?'🏆 TABLA FINAL':'🏁 TABLA PRELIMINAR';
-     const sorted=[...withScores].sort((a,b)=> secretRevealed ? b.real-a.real : b.pub-a.pub);
+     const gr=galaRank(parts,votes);
+     const sorted=secretRevealed?gr.sorted:gr.prelim;
      const ftHeader=secretRevealed?`<div class="ftrow ftwithtotal fthead"><div></div><div></div><div></div><div>PÚBLICO</div><div>SECRETO</div><div>TOTAL</div></div>`:'';
      document.getElementById('finalTable').innerHTML=ftHeader+sorted.map((row,i)=>`
        <div class="ftrow ${secretRevealed?'ftwithtotal':''} ${secretRevealed&&i===0?'ftfirst':''}">
@@ -1106,6 +1417,7 @@ init();
      document.getElementById('normalView').classList.remove('hidden');
      document.getElementById('finalView').classList.add('hidden');
      document.getElementById('winnerOverlay').classList.add('hidden');
+     if(galaShownStep!==-1){ galaShownStep=-1; hideGala(); }
    }
    const ph=sett?.voting_phase||'show';
    const albumEl=document.getElementById('albumTV');
