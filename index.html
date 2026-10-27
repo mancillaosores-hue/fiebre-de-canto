@@ -237,7 +237,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <button class="primary" onclick="saveSettings()">GUARDAR CONFIGURACIÓN</button>
 <button class="primary" style="background:#33395c" onclick="resetVotes()">↻ BORRAR TODOS LOS VOTOS</button>
 <hr style="border-color:#333756;width:100%">
-<button class="primary" style="background:#ff4545" onclick="closeContest()">🏁 CERRAR CONCURSO (ya cantaron todos)</button>
 <div class="sub" style="width:100%">💰 Premios que se muestran en la gala (en pesos)</div>
 <input id="prize1" type="number" min="0" step="500" placeholder="🥇 Premio 1er lugar" oninput="this.dataset.touched=1">
 <input id="prize2" type="number" min="0" step="500" placeholder="🥈 Premio 2do lugar" oninput="this.dataset.touched=1">
@@ -245,7 +244,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <div class="sub" id="prizeTotal" style="width:100%"></div>
 <button class="primary" style="background:#ffc42e;color:#241800" onclick="savePrizes()">💰 GUARDAR PREMIOS</button>
 <div class="sub" style="width:100%">La gala final se maneja desde Participantes, en el recuadro de GALA FINAL, una vez cerrada la votación.</div>
-<button class="primary" style="background:#33395c" onclick="reopenContest()">↩ Reabrir concurso</button>
 <button class="primary" style="background:#33395c" onclick="backToShow()">🎤 VOLVER AL SHOW (fase de show)</button>
 <hr style="border-color:#333756;width:100%">
 <input id="newPin1" placeholder="Nuevo PIN">
