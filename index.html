@@ -1096,29 +1096,16 @@ init();
  async function galaSecret(tok,instant,d){
    gvSet('⚡ EL GIRO DEL SECRETO','Falta revelar el Desplante…');
    const n=d.prelim.length, rh=Math.min(5.6,70/Math.max(1,n));
-   const rowHtml=(r,i)=>'<div class="gv-row" id="gvr'+r.p.id+'" style="height:'+rh+'vh"><span class="gv-pl">'+(i+1)+'</span><span class="gv-ph" style="width:'+(rh-0.6)+'vh;height:'+(rh-0.6)+'vh">'+photoOfP(r.p)+'</span><span class="gv-nm">'+r.p.name+'</span><span class="gv-ch" id="gvd'+r.p.id+'"></span><span class="gv-pb">'+r.pub+'</span><span class="gv-sc" id="gvs'+r.p.id+'">❓</span><span class="gv-tt" id="gvt'+r.p.id+'">'+r.pub+'</span></div>';
-   gvBody().innerHTML='<div class="gv-tblhead"><span></span><span></span><span class="gv-nm">PARTICIPANTE</span><span class="gv-ch"></span><span class="gv-pb">PÚBLICO</span><span class="gv-sc">SECRETO</span><span class="gv-tt">TOTAL</span></div><div class="gv-tbl" id="gvTbl">'+d.prelim.map(rowHtml).join('')+'</div>';
-   const settle=r=>{const s=document.getElementById('gvs'+r.p.id),t=document.getElementById('gvt'+r.p.id);s.textContent='+'+r.sec;s.classList.add('on');t.textContent=r.real;t.classList.add('on')};
-   const place=()=>d.sorted.forEach((r,i)=>{const row=document.getElementById('gvr'+r.p.id);row.querySelector('.gv-pl').textContent=i+1;row.classList.toggle('top3',i<3)});
-   const tbl=document.getElementById('gvTbl');
-   if(instant){ d.prelim.forEach(settle); d.sorted.forEach(r=>tbl.appendChild(document.getElementById('gvr'+r.p.id))); place(); awardDesplante(d,true); return; }
+   const rowHtml=(r,i)=>'<div class="gv-row" id="gvr'+r.p.id+'" style="height:'+rh+'vh"><span class="gv-pl">'+(i+1)+'</span><span class="gv-ph" style="width:'+(rh-0.6)+'vh;height:'+(rh-0.6)+'vh">'+photoOfP(r.p)+'</span><span class="gv-nm">'+r.p.name+'</span><span class="gv-pb">'+r.pub+'</span><span class="gv-sc" id="gvs'+r.p.id+'">❓</span></div>';
+   gvBody().innerHTML='<div class="gv-tblhead"><span></span><span></span><span class="gv-nm">PARTICIPANTE</span><span class="gv-pb">PÚBLICO</span><span class="gv-sc">SECRETO</span></div><div class="gv-tbl" id="gvTbl">'+d.prelim.map(rowHtml).join('')+'</div>';
+   const settle=r=>{const s=document.getElementById('gvs'+r.p.id);s.textContent='+'+r.sec;s.classList.add('on')};
+   if(instant){ d.prelim.forEach(settle); awardDesplante(d,true); return; }
    await sleepG(2200,instant);
    for(let i=n-1;i>=0;i--){
      if(tok!==galaTok) return;
      const r=d.prelim[i]; snd(()=>beep(440+(n-i)*30,120,0,0.08)); settle(r);
      const row=document.getElementById('gvr'+r.p.id); row.classList.add('flash'); await sleepG(650,instant); row.classList.remove('flash');
    }
-   await sleepG(1300,instant); if(tok!==galaTok) return;
-   const els=[...tbl.children]; const first=new Map(els.map(e=>[e,e.getBoundingClientRect().top]));
-   const prevIdx=new Map(d.prelim.map((r,i)=>[r.p.id,i]));
-   d.sorted.forEach(r=>tbl.appendChild(document.getElementById('gvr'+r.p.id)));
-   els.forEach(e=>{const dy=first.get(e)-e.getBoundingClientRect().top;e.style.transition='none';e.style.transform='translateY('+dy+'px)'});
-   void tbl.offsetWidth;
-   els.forEach(e=>{e.style.transition='transform 1.8s cubic-bezier(.2,.8,.2,1)';e.style.transform=''});
-   snd(playDrumroll);
-   await sleepG(1900,instant); if(tok!==galaTok) return;
-   place();
-   d.sorted.forEach((r,i)=>{const delta=prevIdx.get(r.p.id)-i;const c=document.getElementById('gvd'+r.p.id);if(delta>0){c.textContent='▲'+delta;c.className='gv-ch up'}else if(delta<0){c.textContent='▼'+(-delta);c.className='gv-ch down'}});
    await sleepG(1600,instant); if(tok!==galaTok) return;
    awardDesplante(d,instant);
  }
@@ -1127,7 +1114,7 @@ init();
    if(!best) return;
    const row=document.getElementById('gvr'+best.p.id);
    if(row){ row.classList.add('best'); const nm=row.querySelector('.gv-nm'); if(nm&&nm.textContent.indexOf('⚡')<0) nm.textContent='⚡ '+nm.textContent; }
-   gvSet('⚡ MEJOR DESPLANTE','⚡ '+best.p.name+' · '+best.sec+' pts de Desplante');
+   gvSet('⚡ MEJOR DESPLANTE','⚡ '+best.p.name+' · '+best.sec+' pts de Desplante · ¡Con el secreto todo puede cambiar!');
    if(!instant){ gvFlash(); snd(playSuccess); gvConf(120,0.3); }
  }
  async function galaThird(tok,instant,d){
