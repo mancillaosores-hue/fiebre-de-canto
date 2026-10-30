@@ -1364,16 +1364,14 @@ init();
      document.getElementById('finalTitle').textContent=secretRevealed?'🏆 TABLA FINAL':'🏁 TABLA PRELIMINAR';
      const gr=galaRank(parts,votes);
      const sorted=secretRevealed?gr.sorted:gr.prelim;
-     const ftHeader=secretRevealed?`<div class="ftrow ftwithtotal fthead"><div></div><div></div><div></div><div>PÚBLICO</div><div>SECRETO</div><div>TOTAL</div></div>`:'';
-     document.getElementById('finalTable').innerHTML=ftHeader+sorted.map((row,i)=>`
-       <div class="ftrow ${secretRevealed?'ftwithtotal':''} ${secretRevealed&&i===0?'ftfirst':''}">
-         <div class="ftplace">${secretRevealed?(i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1):(i+1)}</div>
-         <div class="ftphoto">${photoOf(row.p)}</div>
-         <div class="ftname">${row.p.name}</div>
-         <div class="ftpub">${row.pub}<small> pts</small></div>
-         <div class="ftsecret ${secretRevealed?'revealed':''}">${secretRevealed?row.sec+' pts':'❓'}</div>
-         ${secretRevealed?`<div class="fttotal">${row.real}<small> pts</small></div>`:''}
-       </div>`).join('');
+     const nFt=sorted.length, rhFt=Math.min(6.4,66/Math.max(1,nFt));
+     const ftHead='<div class="gv-tblhead"><span></span><span></span><span class="gv-nm">PARTICIPANTE</span><span class="gv-pb">PÚBLICO</span><span class="gv-sc">SECRETO</span><span class="gv-tt">TOTAL</span></div>';
+     const ftRows=sorted.map((row,i)=>{
+       const top=secretRevealed&&i<3;
+       const place=secretRevealed?(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)):(i+1);
+       return '<div class="gv-row'+(top?' top3':'')+'" style="height:'+rhFt+'vh"><span class="gv-pl">'+place+'</span><span class="gv-ph" style="width:'+(rhFt-0.6)+'vh;height:'+(rhFt-0.6)+'vh">'+photoOf(row.p)+'</span><span class="gv-nm">'+row.p.name+'</span><span class="gv-pb">'+row.pub+'</span><span class="gv-sc'+(secretRevealed?' on':'')+'">'+(secretRevealed?'+'+row.sec:'❓')+'</span><span class="gv-tt'+(secretRevealed?' on':'')+'">'+(secretRevealed?row.real:'❓')+'</span></div>';
+     }).join('');
+     document.getElementById('finalTable').innerHTML='<div class="gv-ftwrap">'+ftHead+'<div class="gv-tbl">'+ftRows+'</div></div>';
      const leaderFor=idx=>withScores.reduce((best,cur)=>(cur.cs[idx]>0 && (!best||cur.cs[idx]>best.cs[idx]))?cur:best,null);
      const awardDefs=[
        {icon:'🎤',label:'Voz de Oro',idx:0},
@@ -1633,7 +1631,9 @@ init();
 .award-label{font-size:14px;color:#bfc2df;margin-top:6px;font-weight:800}
 .award-name{font-size:20px;font-weight:1000;margin-top:4px}
 .award-score{font-size:14px;color:#20df67;margin-top:2px}
-.finaltable{max-width:900px;margin:0 auto}
+.finaltable{max-width:none;margin:0 auto}
+.gv-ftwrap{display:flex;flex-direction:column;align-items:center}
+.gv-ftwrap .gv-row{font-size:3.4vh}
 .ftrow{display:grid;grid-template-columns:50px 76px 1fr 110px 110px;align-items:center;gap:14px;padding:12px 18px;margin:7px 0;border:1px solid #363a60;border-radius:14px;background:#151934}
 @media(max-width:700px){.ftrow{grid-template-columns:32px 42px 1fr 70px 70px;gap:8px;padding:10px}}
 .ftfirst{border-color:#ffc42e;background:#2b2416;box-shadow:0 0 25px #ffbd2433}
