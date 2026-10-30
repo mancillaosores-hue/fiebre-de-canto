@@ -305,7 +305,7 @@ async function loadAll(){
   handleVotingTimer(prevOpen, prevPid);
   renderAll();
 }
-const GALA=['Tabla preliminar','Luces bajas','Voz de Oro','Mejor Vestuario','El giro del secreto','3er lugar','Duelo final','El ganador','El podio','Tabla final'];
+const GALA=['Tabla preliminar','Luces bajas','Voz de Oro','Mejor Vestuario','Mejor Desplante','3er lugar','Duelo final','El ganador','El podio','Tabla final'];
 function money(n){return '$'+Number(n||0).toLocaleString('es-CL')}
 function galaRank(parts,votes){
   const rows=(parts||[]).map(p=>{
@@ -1094,29 +1094,33 @@ init();
    await gvHeroReveal(tok,instant,w.p.name,' pts',w.cs[idx],null,false,photoOfP(w.p));
  }
  async function galaSecret(tok,instant,d){
-   gvSet('⚡ EL GIRO DEL SECRETO','Falta revelar el Desplante…');
-   const n=d.prelim.length, rh=Math.min(5.6,70/Math.max(1,n));
-   const rowHtml=(r,i)=>'<div class="gv-row" id="gvr'+r.p.id+'" style="height:'+rh+'vh"><span class="gv-pl">'+(i+1)+'</span><span class="gv-ph" style="width:'+(rh-0.6)+'vh;height:'+(rh-0.6)+'vh">'+photoOfP(r.p)+'</span><span class="gv-nm">'+r.p.name+'</span><span class="gv-pb">'+r.pub+'</span><span class="gv-sc" id="gvs'+r.p.id+'">❓</span></div>';
-   gvBody().innerHTML='<div class="gv-tblhead"><span></span><span></span><span class="gv-nm">PARTICIPANTE</span><span class="gv-pb">PÚBLICO</span><span class="gv-sc">SECRETO</span></div><div class="gv-tbl" id="gvTbl">'+d.prelim.map(rowHtml).join('')+'</div>';
-   const settle=r=>{const s=document.getElementById('gvs'+r.p.id);s.textContent='+'+r.sec;s.classList.add('on')};
-   if(instant){ d.prelim.forEach(settle); awardDesplante(d,true); return; }
+   gvSet('⚡ EL GIRO DEL SECRETO','Se revela el Desplante de cada uno…');
+   const rows=d.rows, n=rows.length, rh=Math.min(5.6,70/Math.max(1,n));
+   const best=rows.reduce((b,c)=>(c.sec>0&&(!b||c.sec>b.sec||(c.sec===b.sec&&c.real>b.real)))?c:b,null);
+   const showWinner=async()=>{
+     if(!best){ gvBody().innerHTML='<div class="gv-big">Sin votos</div>'; return; }
+     gvSet('⚡ MEJOR DESPLANTE','El que más desplante tuvo esta noche…');
+     gvBody().innerHTML=heroHtml(best.p,false,false);
+     await gvHeroReveal(tok,instant,best.p.name,' pts de Desplante',best.sec,null,true,null);
+   };
+   if(instant){ await showWinner(); return; }
+   const rowHtml=(r,i)=>'<div class="gv-row" id="gvr'+r.p.id+'" style="height:'+rh+'vh"><span class="gv-pl">'+(i+1)+'</span><span class="gv-ph" style="width:'+(rh-0.6)+'vh;height:'+(rh-0.6)+'vh">'+photoOfP(r.p)+'</span><span class="gv-nm">'+r.p.name+'</span><span class="gv-sc" id="gvs'+r.p.id+'">❓</span></div>';
+   gvBody().innerHTML='<div class="gv-tblhead"><span></span><span></span><span class="gv-nm">PARTICIPANTE</span><span class="gv-sc">DESPLANTE</span></div><div class="gv-tbl" id="gvTbl">'+rows.map(rowHtml).join('')+'</div>';
    await sleepG(2200,instant);
-   for(let i=n-1;i>=0;i--){
+   for(let i=0;i<n;i++){
      if(tok!==galaTok) return;
-     const r=d.prelim[i]; snd(()=>beep(440+(n-i)*30,120,0,0.08)); settle(r);
+     const r=rows[i]; snd(()=>beep(440+i*30,120,0,0.08));
+     const sc=document.getElementById('gvs'+r.p.id); sc.textContent='+'+r.sec; sc.classList.add('on');
      const row=document.getElementById('gvr'+r.p.id); row.classList.add('flash'); await sleepG(650,instant); row.classList.remove('flash');
    }
-   await sleepG(1600,instant); if(tok!==galaTok) return;
-   awardDesplante(d,instant);
+   await sleepG(1200,instant); if(tok!==galaTok) return;
+   if(best){ const br=document.getElementById('gvr'+best.p.id); if(br) br.classList.add('best'); snd(playSuccess); gvFlash(); }
+   await sleepG(2200,instant); if(tok!==galaTok) return;
+   const tbl=document.getElementById('gvTbl'); if(tbl){ tbl.style.transition='opacity .8s'; tbl.style.opacity='0'; }
+   await sleepG(900,instant); if(tok!==galaTok) return;
+   await showWinner();
  }
- function awardDesplante(d,instant){
-   const best=d.rows.reduce((b,c)=>(c.sec>0&&(!b||c.sec>b.sec||(c.sec===b.sec&&c.real>b.real)))?c:b,null);
-   if(!best) return;
-   const row=document.getElementById('gvr'+best.p.id);
-   if(row){ row.classList.add('best'); const nm=row.querySelector('.gv-nm'); if(nm&&nm.textContent.indexOf('⚡')<0) nm.textContent='⚡ '+nm.textContent; }
-   gvSet('⚡ MEJOR DESPLANTE','⚡ '+best.p.name+' · '+best.sec+' pts de Desplante · ¡Con el secreto todo puede cambiar!');
-   if(!instant){ gvFlash(); snd(playSuccess); gvConf(120,0.3); }
- }
+ 
  async function galaThird(tok,instant,d){
    const r=d.sorted[2];
    gvSet('🥉 EN TERCER LUGAR…','');
