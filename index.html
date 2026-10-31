@@ -997,7 +997,7 @@ init();
  let lastLeaderId=null, firstRun=true, winnerShown=false, lastVotingState=null;
  let tvCountdownEnd=null, tvPrevOpen=null, tvPrevPid=null;
  let reactionTimestamps=[];
- let revealSequenceStarted=false, revealSequenceDone=false, initialLoad=true;
+ let tvPrevClosed=null; let revealSequenceStarted=false, revealSequenceDone=false, initialLoad=true;
  const idlePhrases=['🔥 ¡La noche está que arde!','🎶 Prepárense para la próxima sorpresa…','👏 ¡Sigan animando desde sus casas!','🏆 ¿Quién se llevará el título esta noche?'];
  function wait(ms){return new Promise(r=>setTimeout(r,ms))}
  const ENSAYO=params.get('ensayo')==='1'; let ensStep=0, ensSeed=1;
@@ -1390,6 +1390,16 @@ init();
      parts.forEach(p=>{const bias=3+rnd()*4; for(let k=0;k<18;k++){const sc=[0,1,2].map(()=>Math.max(1,Math.min(10,Math.round(bias+rnd()*4)))); votes.push({participant_id:p.id,voter_name_key:'v'+k,scores:sc,total:sc[0]+sc[1]+sc[2]})}});
      sett={...(sett0||{}),contest_closed:true,voting_phase:'done',voting_open:false,gala_step:ensStep,show_secret_table:ensStep>=9,show_winner:false};
    }
+   const nowClosed=!!(sett&&sett.contest_closed);
+   if(nowClosed&&tvPrevClosed===false&&!wasInitialLoad&&!ENSAYO&&!(sett.gala_step>0)&&!window._closeUntil){ window._closeUntil=Date.now()+8000; setTimeout(refresh,8300); }
+   tvPrevClosed=nowClosed;
+   if(!nowClosed){ window._closeUntil=null; window._closeEnded=false; }
+   if(nowClosed&&window._closeUntil&&!window._closeEnded&&Date.now()>=window._closeUntil){ window._closeEnded=true; window._animUntil=Date.now()+7000; }
+   const closing=nowClosed&&!!window._closeUntil&&Date.now()<window._closeUntil&&!(sett.gala_step>0);
+   const animF=Date.now()<(window._animUntil||0);
+   let cov=document.getElementById('gvClosed');
+   if(!cov){ cov=document.createElement('div'); cov.id='gvClosed'; cov.style.cssText='position:fixed;inset:0;z-index:9400;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#10163a 0%,#05071a 60%,#000 100%);color:#ffd76a;text-align:center;font-family:Georgia,serif'; cov.innerHTML='<div style="font-size:16vh">🔒</div><div style="font-size:9vh;font-weight:900;letter-spacing:.06em;margin-top:2vh">VOTACIÓN CERRADA</div><div style="font-size:4.4vh;color:#fff;margin-top:3vh;opacity:.9;animation:gvFade 3s both">Contando los votos…</div>'; document.body.appendChild(cov); }
+   cov.style.display=closing?'flex':'none';
    const sumFor=id=>(votes||[]).filter(v=>v.participant_id===id).reduce((a,v)=>a+Number(v.total),0);
    const list=[...parts].sort((a,b)=>sumFor(b.id)-sumFor(a.id));
    if(!sett?.contest_closed && list.length && list[0] && sumFor(list[0].id)>0){
@@ -1412,6 +1422,7 @@ init();
        return;
      }
      if(galaShownStep!==-1){ galaShownStep=-1; hideGala(); }
+     if(closing){ ['albumTV','normalView','finalView','tvStatsBar'].forEach(i=>document.getElementById(i).classList.add('hidden')); return; }
      document.getElementById('albumTV').classList.add('hidden');
      document.getElementById('tvStatsBar').classList.remove('hidden');
      document.getElementById('normalView').classList.add('hidden');
@@ -1432,9 +1443,9 @@ init();
      const ftRows=sorted.map((row,i)=>{
        const top=secretRevealed&&i<3;
        const place=secretRevealed?(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)):(i+1);
-       return '<div class="gv-row'+(top?' top3':'')+'" style="height:'+rhFt+'vh"><span class="gv-pl">'+place+'</span><span class="gv-ph" style="width:'+(rhFt-0.6)+'vh;height:'+(rhFt-0.6)+'vh">'+photoOf(row.p)+'</span><span class="gv-nm">'+row.p.name+'</span><span class="gv-pb">'+row.pub+'</span><span class="gv-sc'+(secretRevealed?' fin':'')+'">'+(secretRevealed?'+'+row.sec:'❓')+'</span><span class="gv-tt'+(secretRevealed?' fin':'')+'">'+(secretRevealed?row.real:'❓')+'</span></div>';
+       return '<div class="gv-row'+(top?' top3':'')+'" style="height:'+rhFt+'vh'+(animF?';opacity:0;animation:gvFade .8s '+(i*0.35)+'s both':'')+'"><span class="gv-pl">'+place+'</span><span class="gv-ph" style="width:'+(rhFt-0.6)+'vh;height:'+(rhFt-0.6)+'vh">'+photoOf(row.p)+'</span><span class="gv-nm">'+row.p.name+'</span><span class="gv-pb">'+row.pub+'</span><span class="gv-sc'+(secretRevealed?' fin':'')+'">'+(secretRevealed?'+'+row.sec:'❓')+'</span><span class="gv-tt'+(secretRevealed?' fin':'')+'">'+(secretRevealed?row.real:'❓')+'</span></div>';
      }).join('');
-     document.getElementById('finalTable').innerHTML='<div class="gv-ftwrap">'+ftHead+'<div class="gv-tbl">'+ftRows+'</div></div>';
+     {const _fh='<div class="gv-ftwrap">'+ftHead+'<div class="gv-tbl">'+ftRows+'</div></div>'; if(window._ftH!==_fh){window._ftH=_fh; document.getElementById('finalTable').innerHTML=_fh;}}
      const leaderFor=idx=>withScores.reduce((best,cur)=>(cur.cs[idx]>0 && (!best||cur.cs[idx]>best.cs[idx]||(cur.cs[idx]===best.cs[idx]&&cur.real>best.real)))?cur:best,null);
      const awardDefs=[
        {icon:'🎤',label:'Voz de Oro',idx:0},
