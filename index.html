@@ -734,7 +734,7 @@ function renderAlbumAdmin(){
     <div class="arow"><button class="primary blue" onclick="extendAlbum()">＋2 min</button>
     <button class="primary" style="background:#ff4545" onclick="closeAlbum()">🔒 CERRAR VOTACIÓN</button></div>`;
   } else {
-    const gs=state.settings.gala_step||0;
+    const gs=(state.settings.gala_step===9&&state.settings.show_winner)?10:(state.settings.gala_step||0);
     const rk=galaRank(state.participants,state.votes).sorted;
     let notes='';
     for(let i=0;i<Math.min(3,rk.length-1);i++){
@@ -785,7 +785,15 @@ async function galaNext(step){
   galaGo(step);
 }
 async function galaGo(step){
-  try{ await rpc('admin_gala_set',{p_step:step}); await loadAll(); }catch(e){ toast('⚠️ No se pudo cambiar al paso '+step+': '+((e&&e.message)||e)); }
+  try{
+    const st=state.settings;
+    if(step===10){ await rpc('admin_reveal_winner',{}); }
+    else{
+      if(st.show_winner) await rpc('admin_hide_winner',{});
+      await rpc('admin_gala_set',{p_step:step});
+    }
+    await loadAll();
+  }catch(e){ toast('⚠️ No se pudo cambiar al paso '+step+': '+((e&&e.message)||e)); }
 }
 function renderPrizeCfg(){
   const s=state.settings;
@@ -1381,7 +1389,7 @@ init();
      let sd=ensSeed*9301+49297; const rnd=()=>{sd=(sd*9301+49297)%233280;return sd/233280};
      votes=[];
      parts.forEach(p=>{const bias=3+rnd()*4; for(let k=0;k<18;k++){const sc=[0,1,2].map(()=>Math.max(1,Math.min(10,Math.round(bias+rnd()*4)))); votes.push({participant_id:p.id,voter_name_key:'v'+k,scores:sc,total:sc[0]+sc[1]+sc[2]})}});
-     sett={...(sett0||{}),contest_closed:true,voting_phase:'done',voting_open:false,gala_step:ensStep,show_secret_table:ensStep>=9,show_winner:false};
+     sett={...(sett0||{}),contest_closed:true,voting_phase:'done',voting_open:false,gala_step:Math.min(ensStep,9),show_secret_table:ensStep>=9,show_winner:ensStep>=10};
    }
    const nowClosed=!!(sett&&sett.contest_closed);
    if(nowClosed&&tvPrevClosed===false&&!wasInitialLoad&&!ENSAYO&&!(sett.gala_step>0)&&!window._closeUntil){ window._closeUntil=Date.now()+8000; setTimeout(refresh,8300); }
@@ -1393,7 +1401,7 @@ init();
    let cov=document.getElementById('gvClosed');
    if(!cov){ cov=document.createElement('div'); cov.id='gvClosed'; cov.style.cssText='position:fixed;inset:0;z-index:9400;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#10163a 0%,#05071a 60%,#000 100%);color:#ffd76a;text-align:center;font-family:Georgia,serif'; cov.innerHTML='<div style="font-size:16vh">🔒</div><div style="font-size:9vh;font-weight:900;letter-spacing:.06em;margin-top:2vh">VOTACIÓN CERRADA</div><div style="font-size:4.4vh;color:#fff;margin-top:3vh;opacity:.9;animation:gvFade 3s both">Contando los votos…</div>'; document.body.appendChild(cov); }
    cov.style.display=closing?'flex':'none';
-   const bday=nowClosed&&sett.gala_step===10;
+   const bday=nowClosed&&sett.gala_step===9&&!!sett.show_winner;
    let bov=document.getElementById('gvBday');
    if(!bov){ bov=document.createElement('div'); bov.id='gvBday'; bov.style.cssText='position:fixed;inset:0;z-index:9500;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#10163a 0%,#05071a 60%,#000 100%);color:#ffd76a;text-align:center;font-family:Georgia,serif'; bov.innerHTML='<img alt="Cumpleaños" style="max-width:94vw;max-height:80vh;object-fit:contain;border-radius:2vh;border:.5vh solid #ffd76a;box-shadow:0 0 6vh #b8860b"><div style="font-size:6.5vh;font-weight:900;margin-top:2vh">🎂 ¡Feliz cumpleaños, Lely! 🎉</div>'; document.body.appendChild(bov); loadCumple(bov.firstChild); }
    if(bday&&bov.style.display==='none'&&window.confetti&&!ENSAYO) confetti({particleCount:120,spread:100,origin:{y:0.6}});
