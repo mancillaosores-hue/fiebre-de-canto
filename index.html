@@ -1238,18 +1238,7 @@ init();
    };
    if(table[step]) Promise.resolve(table[step]()).catch(e=>console.error(e));
  }
- (function(){
-   const b=document.createElement('div'); b.id='gvAud';
-   b.innerHTML='<button id="gvAb">🔇 Activar sonido</button><input id="gvAv" type="range" min="0" max="100" value="80"><button id="gvAm">🔊</button>';
-   document.body.appendChild(b); window._vol=0.8; let muted=false,hideT=null;
-   const setV=()=>{window._vol=muted?0:document.getElementById('gvAv').value/100; if(window._mg) window._mg.gain.value=window._vol; document.getElementById('gvAm').textContent=muted?'🔇':'🔊'};
-   const idle=()=>{clearTimeout(hideT);hideT=setTimeout(()=>{if(actx().state==='running')b.style.opacity='0'},4000)};
-   const show=()=>{b.style.opacity='1';idle()};
-   document.getElementById('gvAb').onclick=()=>{try{actx().resume().then(()=>{document.getElementById('gvAb').textContent='✅ Sonido activo';beep(660,120,0,0.1);idle()})}catch(e){}};
-   document.getElementById('gvAv').oninput=()=>{muted=false;setV()};
-   document.getElementById('gvAm').onclick=()=>{muted=!muted;setV()};
-   document.addEventListener('mousemove',show); document.addEventListener('touchstart',show);
- })();
+ window._vol=0; /* el sonido se maneja por fuera de la app */
  if(ENSAYO){
    document.body.insertAdjacentHTML('beforeend','<div class="gv-ens">⚠️ DEMOSTRACIÓN (datos ficticios) · ENSAYO · → siguiente · ← atrás · R votos nuevos · haz clic una vez para activar el sonido</div>');
    document.addEventListener('keydown',e=>{
