@@ -734,7 +734,7 @@ function renderAlbumAdmin(){
     <div class="arow"><button class="primary blue" onclick="extendAlbum()">＋2 min</button>
     <button class="primary" style="background:#ff4545" onclick="closeAlbum()">🔒 CERRAR VOTACIÓN</button></div>`;
   } else {
-    const gs=(state.settings.gala_step===9&&state.settings.show_winner)?10:(state.settings.gala_step||0);
+    const gs=state.settings.gala_step||0;
     const rk=galaRank(state.participants,state.votes).sorted;
     let notes='';
     for(let i=0;i<Math.min(3,rk.length-1);i++){
@@ -772,7 +772,7 @@ function galaPreview(nx){
   else if(nx===7){const r=so[0];t='GANADOR → '+L(r,r&&pz(r))}
   else if(nx===8) t='Podio: 🥇 '+(so[0]?so[0].p.name:'—')+' · 🥈 '+(so[1]?so[1].p.name:'—')+' · 🥉 '+(so[2]?so[2].p.name:'—');
   else if(nx===9) t='Tabla final con puntajes secretos y mensaje de cierre.';
-  else if(nx===10) t='Pantalla final: foto de cumpleaños de la Lely en grande 🎂';
+  else if(nx===10) t='Pantalla final: foto de cumpleaños de la Lely en grande + mensaje de cierre 🎂';
   else return '';
   return '<div class="sub" style="margin-top:8px;padding:8px 10px;border:1px solid #ffc42e66;border-radius:10px;text-align:left">👁️ <b>Vista previa privada (lo próximo):</b><br>'+t+'</div>';
 }
@@ -785,15 +785,8 @@ async function galaNext(step){
   galaGo(step);
 }
 async function galaGo(step){
-  try{
-    const st=state.settings;
-    if(step===10){ await rpc('admin_reveal_winner',{}); }
-    else{
-      if(st.show_winner) await rpc('admin_hide_winner',{});
-      await rpc('admin_gala_set',{p_step:step});
-    }
-    await loadAll();
-  }catch(e){ toast('⚠️ No se pudo cambiar al paso '+step+': '+((e&&e.message)||e)); }
+  try{ await rpc('admin_gala_set',{p_step:step}); await loadAll(); }
+  catch(e){ toast('⚠️ No se pudo cambiar al paso '+step+': '+((e&&e.message)||e)); }
 }
 function renderPrizeCfg(){
   const s=state.settings;
@@ -1389,7 +1382,7 @@ init();
      let sd=ensSeed*9301+49297; const rnd=()=>{sd=(sd*9301+49297)%233280;return sd/233280};
      votes=[];
      parts.forEach(p=>{const bias=3+rnd()*4; for(let k=0;k<18;k++){const sc=[0,1,2].map(()=>Math.max(1,Math.min(10,Math.round(bias+rnd()*4)))); votes.push({participant_id:p.id,voter_name_key:'v'+k,scores:sc,total:sc[0]+sc[1]+sc[2]})}});
-     sett={...(sett0||{}),contest_closed:true,voting_phase:'done',voting_open:false,gala_step:Math.min(ensStep,9),show_secret_table:ensStep>=9,show_winner:ensStep>=10};
+     sett={...(sett0||{}),contest_closed:true,voting_phase:'done',voting_open:false,gala_step:ensStep,show_secret_table:ensStep>=9,show_winner:false};
    }
    const nowClosed=!!(sett&&sett.contest_closed);
    if(nowClosed&&tvPrevClosed===false&&!wasInitialLoad&&!ENSAYO&&!(sett.gala_step>0)&&!window._closeUntil){ window._closeUntil=Date.now()+8000; setTimeout(refresh,8300); }
@@ -1401,9 +1394,9 @@ init();
    let cov=document.getElementById('gvClosed');
    if(!cov){ cov=document.createElement('div'); cov.id='gvClosed'; cov.style.cssText='position:fixed;inset:0;z-index:9400;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#10163a 0%,#05071a 60%,#000 100%);color:#ffd76a;text-align:center;font-family:Georgia,serif'; cov.innerHTML='<div style="font-size:16vh">🔒</div><div style="font-size:9vh;font-weight:900;letter-spacing:.06em;margin-top:2vh">VOTACIÓN CERRADA</div><div style="font-size:4.4vh;color:#fff;margin-top:3vh;opacity:.9;animation:gvFade 3s both">Contando los votos…</div>'; document.body.appendChild(cov); }
    cov.style.display=closing?'flex':'none';
-   const bday=nowClosed&&sett.gala_step===9&&!!sett.show_winner;
+   const bday=nowClosed&&sett.gala_step===10;
    let bov=document.getElementById('gvBday');
-   if(!bov){ bov=document.createElement('div'); bov.id='gvBday'; bov.style.cssText='position:fixed;inset:0;z-index:9500;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#10163a 0%,#05071a 60%,#000 100%);color:#ffd76a;text-align:center;font-family:Georgia,serif'; bov.innerHTML='<img alt="Cumpleaños" style="max-width:94vw;max-height:80vh;object-fit:contain;border-radius:2vh;border:.5vh solid #ffd76a;box-shadow:0 0 6vh #b8860b"><div style="font-size:6.5vh;font-weight:900;margin-top:2vh">🎂 ¡Feliz cumpleaños, Lely! 🎉</div>'; document.body.appendChild(bov); loadCumple(bov.firstChild); }
+   if(!bov){ bov=document.createElement('div'); bov.id='gvBday'; bov.style.cssText='position:fixed;inset:0;z-index:9500;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#10163a 0%,#05071a 60%,#000 100%);color:#ffd76a;text-align:center;font-family:Georgia,serif'; bov.innerHTML='<img alt="Cumpleaños" style="max-width:90vw;max-height:56vh;object-fit:contain;border-radius:2vh;border:.5vh solid #ffd76a;box-shadow:0 0 6vh #b8860b"><div style="font-size:5.4vh;font-weight:900;margin-top:1.6vh">🎂 ¡Feliz cumpleaños, Lely! 🎉</div><div style="font-size:2.7vh;line-height:1.35;margin-top:1.6vh;max-width:84vw;color:#fff">Hoy celebramos mucho más que una competencia.<br>Celebramos el talento, las risas, los nervios, los aplausos y los recuerdos que compartimos.<br>Porque más allá de quién ganó, todos formamos parte de esta historia.<br><b style="color:#ffd76a">Una familia. Muchas voces. Recuerdos para toda la vida.<br>Gracias por ser parte de Fiebre de Canto Familiar 2026.</b></div>'; document.body.appendChild(bov); loadCumple(bov.firstChild); }
    if(bday&&bov.style.display==='none'&&window.confetti&&!ENSAYO) confetti({particleCount:120,spread:100,origin:{y:0.6}});
    bov.style.display=bday?'flex':'none';
    const sumFor=id=>(votes||[]).filter(v=>v.participant_id===id).reduce((a,v)=>a+Number(v.total),0);
@@ -1467,7 +1460,7 @@ init();
      }
      document.getElementById('awardsGrid').innerHTML=awardsHtml;
      const awT=document.querySelector('.awards-title'); if(awT) awT.style.display=secretRevealed?'':'none';
-     document.getElementById('awardsGrid').style.display=secretRevealed?'':'none'; document.getElementById('closingMsg').style.display=secretRevealed?'':'none';
+     document.getElementById('awardsGrid').style.display=secretRevealed?'':'none'; document.getElementById('closingMsg').style.display='none';
      const winEl=document.getElementById('winnerOverlay');
      const realSorted=[...withScores].sort((a,b)=>b.real-a.real);
      if(secretRevealed){
