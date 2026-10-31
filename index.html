@@ -307,6 +307,7 @@ async function loadAll(){
   handleVotingTimer(prevOpen, prevPid);
   renderAll();
 }
+function loadCumple(img){const c=['cumpleanos.png','CUMPLEANOS.png','CUMPLEAÑOS.png','cumpleaños.png','CUPLAEÑOS.png','CUMPLEAÑOS.PNG','cumpleanos.jpg'];let i=0;img.style.display='none';img.onload=()=>{img.style.display='block'};img.onerror=()=>{i++;if(i<c.length)img.src=encodeURI(c[i]);else img.style.display='none'};img.src=encodeURI(c[0])}
 const GALA=['Tabla preliminar','Apertura','Voz de Oro','Mejor Vestuario','Mejor Desplante','3er lugar','Duelo final','El ganador','El podio','Tabla final'];
 function money(n){return '$'+Number(n||0).toLocaleString('es-CL')}
 function galaRank(parts,votes){
@@ -963,7 +964,7 @@ init();
      <div class="final-title" id="finalTitle">🏁 TABLA PRELIMINAR</div>
      <div id="finalTable" class="finaltable"></div>
      <div class="awards-title">🏅 PREMIOS DE LA NOCHE</div>
-     <div id="awardsGrid" class="awards-grid"></div><div id="closingMsg" style="display:none">Hoy celebramos mucho más que una competencia.<br>Una familia. Muchas voces. Recuerdos para toda la vida.<br><b>Gracias por ser parte de Fiebre de Canto Familiar 2026.</b></div>
+     <div id="awardsGrid" class="awards-grid"></div><div id="closingMsg" style="display:none">Hoy celebramos mucho más que una competencia.<br>Una familia. Muchas voces. Recuerdos para toda la vida.<br><b>Gracias por ser parte de Fiebre de Canto Familiar 2026.</b><div style="font-size:3.4vh;margin-top:2vh;color:#fff">🎂 ¡Y además celebramos el cumpleaños de la Lely! 🎉</div><img id="cumpleImg" alt="Cumpleaños" style="display:none;margin:1.5vh auto 0;max-height:26vh;max-width:60vw;object-fit:contain;border-radius:2vh;border:.4vh solid #ffd76a"></div>
    </div>
    <div id="commentFeed" class="comment-feed"></div>
    <div class="display-footer">❤️ Gracias por participar · Los resultados se actualizan automáticamente</div>
@@ -1461,7 +1462,7 @@ init();
      }
      document.getElementById('awardsGrid').innerHTML=awardsHtml;
      const awT=document.querySelector('.awards-title'); if(awT) awT.style.display=secretRevealed?'':'none';
-     document.getElementById('awardsGrid').style.display=secretRevealed?'':'none'; document.getElementById('closingMsg').style.display=secretRevealed?'':'none';
+     document.getElementById('awardsGrid').style.display=secretRevealed?'':'none'; document.getElementById('closingMsg').style.display=secretRevealed?'':'none'; {const ci=document.getElementById('cumpleImg'); if(secretRevealed&&ci&&!ci.dataset.l){ci.dataset.l=1;loadCumple(ci)}}
      const winEl=document.getElementById('winnerOverlay');
      const realSorted=[...withScores].sort((a,b)=>b.real-a.real);
      if(secretRevealed){
@@ -1558,7 +1559,11 @@ init();
        dsongEl.textContent=t.name+': '+t.fact;
      }
    }
-   document.getElementById('dphoto').innerHTML=cp?(cp.photo_url?`<img src="${cp.photo_url}" style="width:100%;height:100%;object-fit:contain">`:cp.emoji):'';
+   {const ph=document.getElementById('dphoto'); const k=cp?('c'+cp.id+(cp.photo_url||'')+(cp.emoji||'')):'cumple';
+    if(ph.dataset.k!==k){ ph.dataset.k=k;
+      if(cp){ ph.innerHTML=cp.photo_url?`<img src="${cp.photo_url}" style="width:100%;height:100%;object-fit:contain">`:cp.emoji; }
+      else { ph.innerHTML='<img alt="Cumpleaños" style="width:100%;height:100%;object-fit:contain;border-radius:2vh">'; loadCumple(ph.firstChild); }
+    }}
    const cpCatSums=cp?catSums(votes,cp.id):[0,0,0];
    const liveScore=cpCatSums[0]+cpCatSums[1];
    const scoreEl=document.getElementById('dscore');
