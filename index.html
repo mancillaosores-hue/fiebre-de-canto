@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preload" as="image" href="Fotos/file_00000000a910820eb1dac6f19ce10a1b.png" fetchpriority="high">
-<title>Fiebre de Canto Familiar</title>
+<title>Fiebre de Canto Familiar 2026 · La Gran Gala</title>
 <style>
 :root{--bg:#07091c;--panel:#11152f;--panel2:#171b3b;--purple:#7c22d6;--pink:#ff3fa4;--cyan:#22d9ff;--gold:#ffc42e;--green:#20df67;--text:#f6f5ff;--muted:#a7aac8;--danger:#ff4545}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:radial-gradient(circle at 70% 10%,#24104d 0,#07091c 42%,#040510 100%);color:var(--text);min-height:100vh}
@@ -742,19 +742,28 @@ function renderAlbumAdmin(){
           : `<div class="sub" style="color:#ffc42e">⚖️ Empate en puntos entre ${a.p.name} y ${b.p.name}: gana ${a.p.name} por Desplante.</div>`;
       }
     }
-    h=`<div class="qc-label">GALA FINAL</div><div class="qc-name">Paso ${gs} de 9 · ${GALA[gs]}</div>
-    <div class="sub" style="margin-top:6px">${voters} persona${voters===1?'':'s'} votaron · ${done} completaron los ${n}.</div>${notes}
-    <div class="arow"><button class="primary blue" ${gs<=0?'disabled':''} onclick="galaGo(${gs-1})">◀</button>
-    <button class="primary green" style="flex:1" ${gs>=9?'disabled':''} onclick="galaGo(${gs+1})">${gs===0?'🎬 INICIAR GALA':(gs>=9?'GALA TERMINADA':'SIGUIENTE ▶ '+GALA[gs+1])}</button></div>
-    <div class="arow"><button class="primary" style="background:#33395c" onclick="galaGo(0)">↺ Reiniciar gala</button>
-    <button class="primary" style="background:#33395c" onclick="reopenAlbum()">↩ Reabrir votación 5 min</button></div>`;
+    h=`<div class="director-head"><div class="qc-label">✦ DIRECTOR DE GALA · CONTROL EN VIVO</div><div class="qc-name">Escena ${gs} de 9 · ${GALA[gs]||'Preparación'}</div><div class="director-status"><span class="director-dot"></span> Tú decides cuándo avanzar y cuándo revelar</div></div>
+    <div class="director-metrics"><div><b>${voters}</b><span>votantes</span></div><div><b>${done}/${n}</b><span>votaciones completas</span></div><div><b>${state.settings.show_winner?'REVELADO':'PROTEGIDO'}</b><span>estado del ganador</span></div></div>${notes}
+    <div class="director-note">📺 La pantalla pública muestra solo la escena autorizada. Al llegar al ganador, la pantalla quedará en suspenso hasta que confirmes la revelación.</div>
+    <div class="arow director-actions"><button class="primary blue" ${gs<=0?'disabled':''} onclick="galaGo(${gs-1})">◀ ANTERIOR</button>
+    <button class="primary green" style="flex:1" ${gs>=9?'disabled':''} onclick="galaGo(${gs+1})">${gs===0?'🎬 INICIAR GALA':(gs>=9?'GALA TERMINADA':'SIGUIENTE ▶ '+(GALA[gs+1]||'escena'))}</button></div>
+    ${gs===7?`<div class="reveal-control"><div><b>🏆 MOMENTO DE LA VERDAD</b><div class="sub">Revisa el resultado en privado. La cuenta regresiva y la música no revelan al ganador.</div></div><button class="primary gold-reveal" onclick="revealWinner()" ${state.settings.show_winner?'disabled':''}>✨ CONFIRMAR Y REVELAR GANADOR</button><button class="primary slate" onclick="hideWinner()" ${!state.settings.show_winner?'disabled':''}>🙈 OCULTAR DE NUEVO</button></div>`:''}
+    <div class="arow"><button class="primary slate" onclick="galaGo(0)">↺ REINICIAR GALA</button>
+    <button class="primary slate" onclick="reopenAlbum()">↩ REABRIR VOTACIÓN 5 MIN</button></div>`;
   }
   el.innerHTML=h;
   const sel=document.getElementById('albumMins'); if(sel) sel.value=prevMins;
   updateCountdown();
 }
 async function galaGo(step){
-  try{ await rpc('admin_gala_set',{p_step:step}); await loadAll(); }catch(e){}
+  if(step===7 && !confirm('¿Preparar la escena del ganador? La pantalla mostrará suspenso, pero NO revelará el nombre hasta que pulses “CONFIRMAR Y REVELAR GANADOR”.')) return;
+  if(step===0 && !confirm('¿Reiniciar la gala desde el comienzo? Los votos no se borrarán.')) return;
+  try{
+    if(step===7) await rpc('admin_hide_winner',{});
+    await rpc('admin_gala_set',{p_step:step});
+    await loadAll();
+    toast(step===7?'🎭 Escena preparada. El ganador sigue oculto.':'🎬 Escena de gala actualizada');
+  }catch(e){}
 }
 function renderPrizeCfg(){
   const s=state.settings;
@@ -811,10 +820,12 @@ async function resetVotes(){
   try{ await rpc('admin_reset_votes',{}); await loadAll(); toast('↻ Votos reiniciados');}catch(e){}
 }
 async function revealWinner(){
-  try{ await rpc('admin_reveal_winner',{}); toast('🏆 Resultado revelado en la pantalla TV');}catch(e){}
+  if(!confirm('¿Confirmas revelar ahora al ganador oficial en la pantalla pública?')) return;
+  try{ await rpc('admin_reveal_winner',{}); await loadAll(); toast('🏆 Ganador revelado en la pantalla de gala');}catch(e){}
 }
 async function hideWinner(){
-  try{ await rpc('admin_hide_winner',{}); toast('Resultado oculto');}catch(e){}
+  if(!confirm('¿Ocultar nuevamente el resultado en la pantalla pública?')) return;
+  try{ await rpc('admin_hide_winner',{}); await loadAll(); toast('🙈 Resultado oculto');}catch(e){}
 }
 async function showSecretTable(){
   try{ await rpc('admin_show_secret_table',{}); toast('📊 Tabla final con puntaje secreto mostrada en TV');}catch(e){}
@@ -972,7 +983,7 @@ init();
  const idlePhrases=['🔥 ¡La noche está que arde!','🎶 Prepárense para la próxima sorpresa…','👏 ¡Sigan animando desde sus casas!','🏆 ¿Quién se llevará el título esta noche?'];
  function wait(ms){return new Promise(r=>setTimeout(r,ms))}
  const ENSAYO=params.get('ensayo')==='1'; let ensStep=0, ensSeed=1;
- let galaTok=0, galaShownStep=-1, galaTimers=[];
+ let galaTok=0, galaShownStep=-1, galaShownRevealState=null, galaTimers=[];
  document.head.insertAdjacentHTML('beforeend','<style>'+`#galaView{position:fixed;inset:0;z-index:9500;background:radial-gradient(ellipse at 50% 38%,#2a1060 0%,#0a0620 55%,#000 100%);color:#fff;display:flex;flex-direction:column;align-items:center;padding:3vh 3vw;overflow:hidden;text-align:center}
 #galaView.hidden{display:none!important}
 .gv-beams i{position:absolute;top:-10vh;width:18vw;height:130vh;background:linear-gradient(180deg,rgba(255,226,140,.55),rgba(255,226,140,0));transform-origin:50% 0;filter:blur(14px);opacity:.45;animation:gvSweep 7s ease-in-out infinite alternate}
@@ -985,6 +996,7 @@ init();
 .gv-sub{position:relative;font-size:2.8vh;opacity:.9;margin-top:.6vh;min-height:3.2vh}
 .gv-body{position:relative;flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
 .gv-big{font-size:8vh;font-weight:900}.gv-small{font-size:3.4vh;opacity:.85;margin-top:2vh}
+.gv-wait{margin-top:2vh;padding:2.2vh 3vw;border:1px solid rgba(255,196,46,.42);border-radius:2vh;background:linear-gradient(145deg,rgba(30,22,48,.86),rgba(0,0,0,.72));box-shadow:0 0 6vh rgba(255,196,46,.12);max-width:80vw}.gv-wait-seal{width:8vh;height:8vh;border:2px solid #ffc42e;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1vh;font-size:5vh;font-weight:1000;color:#ffc42e;box-shadow:0 0 3vh #ffc42e66}.gv-wait-title{font-size:3.2vh;font-weight:1000;letter-spacing:.12em;color:#ffc42e}.gv-wait-copy{font-size:2.2vh;color:#e8e2f3;margin-top:.8vh}.gv-wait-pulse{display:flex;gap:.8vh;justify-content:center;margin-top:1.5vh}.gv-wait-pulse i{width:1vh;height:1vh;background:#ffc42e;border-radius:50%;animation:gvPulse 1s infinite}.gv-wait-pulse i:nth-child(2){animation-delay:.2s}.gv-wait-pulse i:nth-child(3){animation-delay:.4s}
 .gv-fade{animation:gvFade 2.5s both}.gv-fade2{animation:gvFade 2.5s 1.4s both}
 @keyframes gvFade{from{opacity:0}to{opacity:1}}
 .gv-hero{display:flex;flex-direction:column;align-items:center}
@@ -1078,7 +1090,7 @@ init();
  }
  function galaData(parts,votes,sett){
    const rk=galaRank(parts,votes);
-   return {...rk,voters:new Set((votes||[]).map(v=>v.voter_name_key)).size,prizes:[sett&&sett.prize_1!=null?sett.prize_1:35000,sett&&sett.prize_2!=null?sett.prize_2:20000,sett&&sett.prize_3!=null?sett.prize_3:10000]};
+   return {...rk,voters:new Set((votes||[]).map(v=>v.voter_name_key)).size,showWinner:!!(sett&&sett.show_winner),prizes:[sett&&sett.prize_1!=null?sett.prize_1:35000,sett&&sett.prize_2!=null?sett.prize_2:20000,sett&&sett.prize_3!=null?sett.prize_3:10000]};
  }
  async function galaIntro(tok,instant,d){
    gvSet('🎭 LA GALA DE LA VERDAD','Fiebre de Canto Familiar');
@@ -1146,16 +1158,22 @@ init();
  }
  async function galaWinner(tok,instant,d){
    const a=d.sorted[0], b=d.sorted[1];
-   if(!a){gvSet('—','');return}
+   if(!a){gvSet('RESULTADO NO DISPONIBLE','No hay participantes con resultados para revelar.');gvBody().innerHTML='<div class="gv-big">Revisa los votos desde el panel de administración.</div>';return}
    const tie=a.tied&&a.groupTo>=2&&!!b;
-   gvSet(tie?'🤝 ¡INCREÍBLE! HAY…':'🥁 Y EL PRIMER LUGAR ES PARA…','');
+   if(!d.showWinner){
+     gvSet('🥁 Y EL PRIMER LUGAR ES PARA…','La familia está a punto de conocer el resultado');
+     gvBody().innerHTML=heroHtml(a.p,true,true)+'<div class="gv-wait"><div class="gv-wait-seal">?</div><div class="gv-wait-title">EL MOMENTO HA LLEGADO</div><div class="gv-wait-copy">El director de gala revelará el resultado cuando esté listo.</div><div class="gv-wait-pulse"><i></i><i></i><i></i></div></div>';
+     if(!instant){snd(playDrumroll);}
+     return;
+   }
+   gvSet(tie?'🤝 ¡INCREÍBLE! HAY…':'🏆 EL MOMENTO DE LA VERDAD','');
    gvBody().innerHTML=heroHtml(a.p,!instant,true)+'<div class="gv-second" id="gvSecond"></div>';
-   if(!instant){ snd(playDrumroll); await sleepG(3200,instant); if(tok!==galaTok) return; gvFlash(); snd(playApplause); }
+   if(!instant){ snd(playDrumroll); await sleepG(1800,instant); if(tok!==galaTok) return; gvFlash(); snd(playApplause); }
    gvSet(tie?'🏆 ¡EMPATE EN EL 1ER LUGAR!':'🏆 ¡GANÓ LA FIEBRE DE CANTO!','');
    await gvHeroReveal(tok,instant,tie?(a.p.name+' y '+b.p.name):a.p.name,' pts',a.real,money(prizeFor(a,d.prizes))+(tie?' c/u':''),true,photoOfP(a.p));
    if(tok!==galaTok) return;
    if(!tie&&b){
-     await sleepG(2000,instant); if(tok!==galaTok) return;
+     await sleepG(1200,instant); if(tok!==galaTok) return;
      const s=document.getElementById('gvSecond'); s.textContent='🥈 2° lugar: '+b.p.name+' · '+b.real+' pts · '+money(prizeFor(b,d.prizes)); s.classList.add('on');
    }
  }
@@ -1163,7 +1181,7 @@ init();
    gvSet('🏆 LOS GANADORES DE LA FIEBRE DE CANTO 🏆','¡Gracias familia por esta noche!');
    const a=d.sorted[0], b=d.sorted[1], c=d.sorted[2];
    const col=(r,pl,h,medal)=>r?'<div class="gv-pcol p'+pl+'" style="--h:'+h+'vh"><div class="gv-pph">'+photoOfP(r.p)+'</div><div class="gv-pnm">'+r.p.name+'</div><div class="gv-ppts">'+r.real+' pts</div><div class="gv-ppr">'+money(prizeFor(r,d.prizes))+'</div><div class="gv-pblock">'+medal+' '+pl+'°</div></div>':'<div class="gv-pcol"></div>';
-   gvBody().innerHTML='<div class="gv-podium">'+col(b,2,13,'🥈')+col(a,1,20,'🥇')+col(c,3,8,'🥉')+'</div>';
+   gvBody().innerHTML='<div class="gv-podium">'+col(b,2,13,'🥈')+col(a,1,20,'🥇')+col(c,3,8,'🥉')+'</div><div class="gv-closing-message"><span>UNA FAMILIA · MUCHAS VOCES</span><b>Recuerdos para toda la vida ❤️</b></div>';
    if(instant) return;
    snd(playApplause); gvConf(170,0.3);
    galaTimers.push(setInterval(()=>gvConf(70,0.2+Math.random()*0.3),2300));
@@ -1345,10 +1363,14 @@ init();
        document.getElementById('normalView').classList.add('hidden');
        document.getElementById('finalView').classList.add('hidden');
        document.getElementById('tvStatsBar').classList.add('hidden');
-       if(galaShownStep!==gstep){ galaShownStep=gstep; runGalaStep(gstep,galaData(parts,votes,sett),wasInitialLoad); }
+       const revealState=!!sett.show_winner;
+       if(galaShownStep!==gstep || (gstep===7 && galaShownRevealState!==revealState)){
+         galaShownStep=gstep; galaShownRevealState=revealState;
+         runGalaStep(gstep,galaData(parts,votes,sett),wasInitialLoad);
+       }
        return;
      }
-     if(galaShownStep!==-1){ galaShownStep=-1; hideGala(); }
+     if(galaShownStep!==-1){ galaShownStep=-1; galaShownRevealState=null; hideGala(); }
      document.getElementById('albumTV').classList.add('hidden');
      document.getElementById('tvStatsBar').classList.remove('hidden');
      document.getElementById('normalView').classList.add('hidden');
@@ -1679,5 +1701,24 @@ init();
 .reveal-place-photo{width:clamp(120px,16vw,190px);height:clamp(120px,16vw,190px);margin:8px auto;border-radius:50%;border:5px solid #a82aff;background:linear-gradient(135deg,#201b53,#50227e);display:flex;align-items:center;justify-content:center;font-size:clamp(50px,7vw,80px);box-shadow:0 0 40px #922cff88;overflow:hidden}
 .reveal-place-name{font-size:clamp(26px,4vw,48px);font-weight:1000;margin-top:8px}
 .reveal-place-pts{font-size:clamp(18px,2.6vw,28px);color:#20df67;font-weight:900;margin-top:4px}
+
+.gv-closing-message{position:absolute;bottom:1.5vh;left:0;right:0;display:flex;flex-direction:column;gap:.4vh;text-align:center;pointer-events:none;text-shadow:0 2px 12px #000}.gv-closing-message span{font-size:1.8vh;letter-spacing:.25em;color:#f5d47d;font-weight:900}.gv-closing-message b{font-size:2.8vh;color:#fff;font-weight:800}
+/* ===== Director de Gala: control premium ===== */
+.director-head{width:100%;padding:2px 0 12px;border-bottom:1px solid #4b3c69;margin-bottom:12px}
+.director-head .qc-label{color:#f4d27a;letter-spacing:1.7px}
+.director-status{display:flex;align-items:center;gap:8px;color:#d9d2eb;font-size:12px;margin-top:7px}
+.director-dot{width:8px;height:8px;border-radius:50%;background:#20df67;box-shadow:0 0 12px #20df67;display:inline-block}
+.director-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;margin:10px 0}
+.director-metrics>div{background:linear-gradient(145deg,#15172d,#20172e);border:1px solid #51412e;border-radius:10px;padding:10px;text-align:center}
+.director-metrics b{display:block;font-size:19px;color:#f5d47d;overflow-wrap:anywhere}
+.director-metrics span{display:block;font-size:10px;color:#bcb5cf;margin-top:3px}
+.director-note{width:100%;padding:10px 12px;margin:10px 0;background:#14152b;border-left:3px solid #d7ad48;border-radius:7px;color:#e9e2f2;font-size:12px;line-height:1.5}
+.director-actions{width:100%}
+.reveal-control{display:flex;align-items:center;gap:9px;flex-wrap:wrap;width:100%;margin:12px 0;padding:14px;border:1px solid #9a7735;border-radius:12px;background:linear-gradient(135deg,#221b18,#111326)}
+.reveal-control>div{flex:1;min-width:190px}.reveal-control>div>b{color:#f7d77d;letter-spacing:.04em}
+.gold-reveal{background:linear-gradient(100deg,#8b6117,#f4d47b,#a77a20)!important;color:#211704!important;box-shadow:0 0 24px #d7ad4830!important}
+.slate{background:#30344d!important;color:#fff!important}
+.director-actions button,.reveal-control button{min-height:42px}
+@media(max-width:600px){.director-metrics b{font-size:16px}.director-metrics span{font-size:9px}.reveal-control button{width:100%}}
 </style>
 </body></html>
