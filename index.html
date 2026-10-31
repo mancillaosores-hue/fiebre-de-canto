@@ -308,7 +308,7 @@ async function loadAll(){
   renderAll();
 }
 function loadCumple(img){const q=new URLSearchParams(location.search).get('cumple');const c=q?[q]:['Fotos/CUPLAEÑOS.png','Fotos/cumpleanos.png','cumpleanos.png','CUMPLEANOS.png','CUMPLEAÑOS.png','cumpleaños.png','CUPLAEÑOS.png','CUMPLEAÑOS.PNG','cumpleanos.jpg'];const f=x=>/^https?:/i.test(x)?x:encodeURI(x);let i=0;img.style.display='none';img.onload=()=>{img.style.display='block'};img.onerror=()=>{i++;if(i<c.length)img.src=f(c[i]);else img.style.display='none'};img.src=f(c[0])}
-const GALA=['Tabla preliminar','Apertura','Voz de Oro','Mejor Vestuario','Mejor Desplante','3er lugar','Duelo final','El ganador','El podio','Tabla final'];
+const GALA=['Tabla preliminar','Apertura','Voz de Oro','Mejor Vestuario','Mejor Desplante','3er lugar','Duelo final','El ganador','El podio','Tabla final','Cumpleaños'];
 function money(n){return '$'+Number(n||0).toLocaleString('es-CL')}
 function galaRank(parts,votes){
   const rows=(parts||[]).map(p=>{
@@ -745,10 +745,10 @@ function renderAlbumAdmin(){
           : `<div class="sub" style="color:#ffc42e">⚖️ Empate en puntos entre ${a.p.name} y ${b.p.name}: gana ${a.p.name} por Desplante.</div>`;
       }
     }
-    h=`<div class="qc-label">GALA FINAL</div><div class="qc-name">Paso ${gs} de 9 · ${GALA[gs]}</div>
+    h=`<div class="qc-label">GALA FINAL</div><div class="qc-name">Paso ${gs} de 10 · ${GALA[gs]}</div>
     <div class="sub" style="margin-top:6px">${voters} persona${voters===1?'':'s'} votaron · ${done} completaron los ${n}.</div>${notes}${galaPreview(gs+1)}
     <div class="arow"><button class="primary blue" ${gs<=0?'disabled':''} onclick="galaGo(${gs-1})">◀</button>
-    <button class="primary green" style="flex:1" ${gs>=9?'disabled':''} onclick="galaNext(${gs+1})">${gs===0?'🎬 INICIAR GALA':(gs>=9?'GALA TERMINADA':([4,6].includes(gs)?'🔐 CONFIRMAR Y REVELAR: ':'SIGUIENTE ▶ ')+GALA[gs+1])}</button></div>
+    <button class="primary green" style="flex:1" ${gs>=10?'disabled':''} onclick="galaNext(${gs+1})">${gs===0?'🎬 INICIAR GALA':(gs>=10?'GALA TERMINADA':([4,6].includes(gs)?'🔐 CONFIRMAR Y REVELAR: ':'SIGUIENTE ▶ ')+GALA[gs+1])}</button></div>
     <div class="arow"><button class="primary" style="background:#33395c" onclick="galaGo(0)">↺ Reiniciar gala</button>
     <button class="primary" style="background:#33395c" onclick="reopenAlbum()">↩ Reabrir votación 5 min</button></div>`;
   }
@@ -772,6 +772,7 @@ function galaPreview(nx){
   else if(nx===7){const r=so[0];t='GANADOR → '+L(r,r&&pz(r))}
   else if(nx===8) t='Podio: 🥇 '+(so[0]?so[0].p.name:'—')+' · 🥈 '+(so[1]?so[1].p.name:'—')+' · 🥉 '+(so[2]?so[2].p.name:'—');
   else if(nx===9) t='Tabla final con puntajes secretos y mensaje de cierre.';
+  else if(nx===10) t='Pantalla final: foto de cumpleaños de la Lely en grande 🎂';
   else return '';
   return '<div class="sub" style="margin-top:8px;padding:8px 10px;border:1px solid #ffc42e66;border-radius:10px;text-align:left">👁️ <b>Vista previa privada (lo próximo):</b><br>'+t+'</div>';
 }
@@ -784,7 +785,7 @@ async function galaNext(step){
   galaGo(step);
 }
 async function galaGo(step){
-  try{ await rpc('admin_gala_set',{p_step:step}); await loadAll(); }catch(e){}
+  try{ await rpc('admin_gala_set',{p_step:step}); await loadAll(); }catch(e){ toast('⚠️ No se pudo cambiar al paso '+step+': '+((e&&e.message)||e)); }
 }
 function renderPrizeCfg(){
   const s=state.settings;
@@ -964,7 +965,7 @@ init();
      <div class="final-title" id="finalTitle">🏁 TABLA PRELIMINAR</div>
      <div id="finalTable" class="finaltable"></div>
      <div class="awards-title">🏅 PREMIOS DE LA NOCHE</div>
-     <div id="awardsGrid" class="awards-grid"></div><div id="closingMsg" style="display:none">Hoy celebramos mucho más que una competencia.<br>Una familia. Muchas voces. Recuerdos para toda la vida.<br><b>Gracias por ser parte de Fiebre de Canto Familiar 2026.</b><div style="font-size:3.4vh;margin-top:2vh;color:#fff">🎂 ¡Y además celebramos el cumpleaños de la Lely! 🎉</div><img id="cumpleImg" alt="Cumpleaños" style="display:none;margin:1.5vh auto 0;max-height:26vh;max-width:60vw;object-fit:contain;border-radius:2vh;border:.4vh solid #ffd76a"></div>
+     <div id="awardsGrid" class="awards-grid"></div><div id="closingMsg" style="display:none">Hoy celebramos mucho más que una competencia.<br>Una familia. Muchas voces. Recuerdos para toda la vida.<br><b>Gracias por ser parte de Fiebre de Canto Familiar 2026.</b></div>
    </div>
    <div id="commentFeed" class="comment-feed"></div>
    <div class="display-footer">❤️ Gracias por participar · Los resultados se actualizan automáticamente</div>
@@ -1242,7 +1243,7 @@ init();
  if(ENSAYO){
    document.body.insertAdjacentHTML('beforeend','<div class="gv-ens">⚠️ DEMOSTRACIÓN (datos ficticios) · ENSAYO · → siguiente · ← atrás · R votos nuevos · haz clic una vez para activar el sonido</div>');
    document.addEventListener('keydown',e=>{
-     if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ensStep=Math.min(9,ensStep+1);refresh();e.preventDefault()}
+     if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ensStep=Math.min(10,ensStep+1);refresh();e.preventDefault()}
      else if(e.key==='ArrowLeft'||e.key==='PageUp'){ensStep=Math.max(0,ensStep-1);refresh();e.preventDefault()}
      else if(e.key==='r'||e.key==='R'){ensSeed++;galaShownStep=-1;refresh()}
    });
@@ -1392,6 +1393,11 @@ init();
    let cov=document.getElementById('gvClosed');
    if(!cov){ cov=document.createElement('div'); cov.id='gvClosed'; cov.style.cssText='position:fixed;inset:0;z-index:9400;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#10163a 0%,#05071a 60%,#000 100%);color:#ffd76a;text-align:center;font-family:Georgia,serif'; cov.innerHTML='<div style="font-size:16vh">🔒</div><div style="font-size:9vh;font-weight:900;letter-spacing:.06em;margin-top:2vh">VOTACIÓN CERRADA</div><div style="font-size:4.4vh;color:#fff;margin-top:3vh;opacity:.9;animation:gvFade 3s both">Contando los votos…</div>'; document.body.appendChild(cov); }
    cov.style.display=closing?'flex':'none';
+   const bday=nowClosed&&sett.gala_step===10;
+   let bov=document.getElementById('gvBday');
+   if(!bov){ bov=document.createElement('div'); bov.id='gvBday'; bov.style.cssText='position:fixed;inset:0;z-index:9500;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#10163a 0%,#05071a 60%,#000 100%);color:#ffd76a;text-align:center;font-family:Georgia,serif'; bov.innerHTML='<img alt="Cumpleaños" style="max-width:94vw;max-height:80vh;object-fit:contain;border-radius:2vh;border:.5vh solid #ffd76a;box-shadow:0 0 6vh #b8860b"><div style="font-size:6.5vh;font-weight:900;margin-top:2vh">🎂 ¡Feliz cumpleaños, Lely! 🎉</div>'; document.body.appendChild(bov); loadCumple(bov.firstChild); }
+   if(bday&&bov.style.display==='none'&&window.confetti&&!ENSAYO) confetti({particleCount:120,spread:100,origin:{y:0.6}});
+   bov.style.display=bday?'flex':'none';
    const sumFor=id=>(votes||[]).filter(v=>v.participant_id===id).reduce((a,v)=>a+Number(v.total),0);
    const list=[...parts].sort((a,b)=>sumFor(b.id)-sumFor(a.id));
    if(!sett?.contest_closed && list.length && list[0] && sumFor(list[0].id)>0){
@@ -1453,7 +1459,7 @@ init();
      }
      document.getElementById('awardsGrid').innerHTML=awardsHtml;
      const awT=document.querySelector('.awards-title'); if(awT) awT.style.display=secretRevealed?'':'none';
-     document.getElementById('awardsGrid').style.display=secretRevealed?'':'none'; document.getElementById('closingMsg').style.display=secretRevealed?'':'none'; {const ci=document.getElementById('cumpleImg'); if(secretRevealed&&ci&&!ci.dataset.l){ci.dataset.l=1;loadCumple(ci)}}
+     document.getElementById('awardsGrid').style.display=secretRevealed?'':'none'; document.getElementById('closingMsg').style.display=secretRevealed?'':'none';
      const winEl=document.getElementById('winnerOverlay');
      const realSorted=[...withScores].sort((a,b)=>b.real-a.real);
      if(secretRevealed){
