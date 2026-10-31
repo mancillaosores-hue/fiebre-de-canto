@@ -307,7 +307,7 @@ async function loadAll(){
   handleVotingTimer(prevOpen, prevPid);
   renderAll();
 }
-function loadCumple(img){const c=['cumpleanos.png','CUMPLEANOS.png','CUMPLEAÑOS.png','cumpleaños.png','CUPLAEÑOS.png','CUMPLEAÑOS.PNG','cumpleanos.jpg'];let i=0;img.style.display='none';img.onload=()=>{img.style.display='block'};img.onerror=()=>{i++;if(i<c.length)img.src=encodeURI(c[i]);else img.style.display='none'};img.src=encodeURI(c[0])}
+function loadCumple(img){const q=new URLSearchParams(location.search).get('cumple');const c=q?[q]:['Fotos/CUPLAEÑOS.png','Fotos/cumpleanos.png','cumpleanos.png','CUMPLEANOS.png','CUMPLEAÑOS.png','cumpleaños.png','CUPLAEÑOS.png','CUMPLEAÑOS.PNG','cumpleanos.jpg'];const f=x=>/^https?:/i.test(x)?x:encodeURI(x);let i=0;img.style.display='none';img.onload=()=>{img.style.display='block'};img.onerror=()=>{i++;if(i<c.length)img.src=f(c[i]);else img.style.display='none'};img.src=f(c[0])}
 const GALA=['Tabla preliminar','Apertura','Voz de Oro','Mejor Vestuario','Mejor Desplante','3er lugar','Duelo final','El ganador','El podio','Tabla final'];
 function money(n){return '$'+Number(n||0).toLocaleString('es-CL')}
 function galaRank(parts,votes){
