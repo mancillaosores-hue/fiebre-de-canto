@@ -1369,10 +1369,10 @@ init();
      const ftRows=sorted.map((row,i)=>{
        const top=secretRevealed&&i<3;
        const place=secretRevealed?(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)):(i+1);
-       return '<div class="gv-row'+(top?' top3':'')+'" style="height:'+rhFt+'vh"><span class="gv-pl">'+place+'</span><span class="gv-ph" style="width:'+(rhFt-0.6)+'vh;height:'+(rhFt-0.6)+'vh">'+photoOf(row.p)+'</span><span class="gv-nm">'+row.p.name+'</span><span class="gv-pb">'+row.pub+'</span><span class="gv-sc'+(secretRevealed?' on':'')+'">'+(secretRevealed?'+'+row.sec:'❓')+'</span><span class="gv-tt'+(secretRevealed?' on':'')+'">'+(secretRevealed?row.real:'❓')+'</span></div>';
+       return '<div class="gv-row'+(top?' top3':'')+'" style="height:'+rhFt+'vh"><span class="gv-pl">'+place+'</span><span class="gv-ph" style="width:'+(rhFt-0.6)+'vh;height:'+(rhFt-0.6)+'vh">'+photoOf(row.p)+'</span><span class="gv-nm">'+row.p.name+'</span><span class="gv-pb">'+row.pub+'</span><span class="gv-sc'+(secretRevealed?' fin':'')+'">'+(secretRevealed?'+'+row.sec:'❓')+'</span><span class="gv-tt'+(secretRevealed?' fin':'')+'">'+(secretRevealed?row.real:'❓')+'</span></div>';
      }).join('');
      document.getElementById('finalTable').innerHTML='<div class="gv-ftwrap">'+ftHead+'<div class="gv-tbl">'+ftRows+'</div></div>';
-     const leaderFor=idx=>withScores.reduce((best,cur)=>(cur.cs[idx]>0 && (!best||cur.cs[idx]>best.cs[idx]))?cur:best,null);
+     const leaderFor=idx=>withScores.reduce((best,cur)=>(cur.cs[idx]>0 && (!best||cur.cs[idx]>best.cs[idx]||(cur.cs[idx]===best.cs[idx]&&cur.real>best.real)))?cur:best,null);
      const awardDefs=[
        {icon:'🎤',label:'Voz de Oro',idx:0},
        {icon:'👗',label:'Mejor Vestuario',idx:1}
@@ -1633,6 +1633,7 @@ init();
 .award-score{font-size:14px;color:#20df67;margin-top:2px}
 .finaltable{max-width:none;margin:0 auto}
 .gv-ftwrap{display:flex;flex-direction:column;align-items:center}
+.gv-sc.fin{color:#ffc42e;font-weight:800}.gv-tt.fin{color:#20df67}
 .gv-ftwrap .gv-row{font-size:3.4vh}
 .ftrow{display:grid;grid-template-columns:50px 76px 1fr 110px 110px;align-items:center;gap:14px;padding:12px 18px;margin:7px 0;border:1px solid #363a60;border-radius:14px;background:#151934}
 @media(max-width:700px){.ftrow{grid-template-columns:32px 42px 1fr 70px 70px;gap:8px;padding:10px}}
