@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Lo íntimo · Fiebre de Canto</title>
+<style>
+:root{--bg:#0b0e24;--card:#161b3d;--gold:#ffd76a;--tx:#f4f1e8;--mut:#9aa0c4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,sans-serif;padding:12px;max-width:760px;margin:auto}
+h1{color:var(--gold);font-size:20px;margin:6px 0 10px;font-family:Georgia,serif}
+.card{background:var(--card);border-radius:12px;padding:12px;margin:10px 0}
+input,select,button{font-size:16px;padding:10px;border-radius:10px;border:1px solid #333a70;background:#0f1330;color:var(--tx);width:100%}
+button{background:var(--gold);color:#222;font-weight:700;border:0;margin-top:8px}
+.tabs{display:flex;gap:6px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:5}
+.tabs button{margin:0;background:#232a5c;color:var(--tx);font-size:14px;padding:9px 4px}
+.tabs button.on{background:var(--gold);color:#222}
+.row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #232a5c;font-size:15px}
+.row:last-child{border:0}.sc{color:var(--gold);white-space:nowrap}.mut{color:var(--mut);font-size:13px}
+details>summary{cursor:pointer;font-weight:700;padding:4px 0}
+.cm{padding:8px 0;border-bottom:1px solid #232a5c}.cm b{color:var(--gold)}
+.err{color:#ff7b7b}
+</style></head><body>
+<h1>🔒 Lo íntimo · Fiebre de Canto 2026</h1>
+<div id="login" class="card">
+  <input id="pin" type="password" inputmode="numeric" placeholder="PIN de administrador" autocomplete="off">
+  <button id="go">Entrar</button><div id="msg" class="err mut"></div>
+</div>
+<div id="app" style="display:none">
+  <div class="tabs"><button data-t="v" class="on">Votos</button><button data-t="q">Por votante</button><button data-t="c">Comentarios</button><button data-t="r">Reacciones</button></div>
+  <div id="view"></div>
+</div>
+<script>
+const URL_='https://xhvqudltvtfsdnycigjp.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodnF1ZGx0dnRmc2RueWNpZ2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNTI2MDUsImV4cCI6MjEwMzYyODYwNX0.XGQiOWz4oZGTvPlMqjWokTVFxZbWWaKFHXkVVkMFW7A';
+const H={apikey:KEY,Authorization:'Bearer '+KEY};
+const CRIT=['Voz','Vestuario','Desplante'];
+let D={p:[],v:[],c:[],r:[]},tab='v';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=t=>new Date(t).toLocaleString('es-CL',{timeZone:'America/Santiago',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+async function getAll(tbl,sel,order){
+  let out=[],from=0;
+  for(;;){
+    const r=await fetch(`${URL_}/rest/v1/${tbl}?select=${sel}&order=${order}`,{headers:{...H,Range:`${from}-${from+999}`,'Range-Unit':'items'}});
+    if(!r.ok) throw new Error(tbl+' '+r.status);
+    const a=await r.json(); out=out.concat(a); if(a.length<1000) break; from+=1000;
+  }
+  return out;
+}
+document.getElementById('go').onclick=async()=>{
+  const m=document.getElementById('msg'); m.textContent='Verificando…';
+  try{
+    const r=await fetch(URL_+'/rest/v1/rpc/check_admin_pin',{method:'POST',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({p_pin:document.getElementById('pin').value})});
+    if(!r.ok){m.textContent='PIN incorrecto';return}
+    m.textContent='Cargando datos…';
+    const [p,v,c,r2]=await Promise.all([getAll('participants','id,name,emoji','position.asc'),getAll('votes','participant_id,voter_name,scores,total,created_at','created_at.asc'),getAll('comments','participant_id,voter_name,text,created_at','created_at.desc'),getAll('reactions','participant_id,emoji','id.asc')]);
+    D={p,v,c,r:r2};
+    document.getElementById('login').style.display='none';document.getElementById('app').style.display='block';render();
+  }catch(e){m.textContent='Error: '+e.message}
+};
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));render()});
+const pn=id=>{const p=D.p.find(x=>x.id===id);return p?(p.emoji||'')+' '+p.name:'#'+id};
+const sc=v=>(Array.isArray(v.scores)?v.scores:[]).map((n,i)=>(CRIT[i]||'C'+(i+1))+' '+n).join(' · ');
+function render(){
+  const el=document.getElementById('view');let h='';
+  if(tab==='v'){
+    const rows=D.p.map(p=>{const vs=D.v.filter(v=>v.participant_id===p.id);const sum=vs.reduce((a,v)=>a+Number(v.total||0),0);return{p,vs,sum,avg:vs.length?sum/vs.length:0}}).sort((a,b)=>b.avg-a.avg);
+    h=`<div class="mut">${D.v.length} votos · ${new Set(D.v.map(v=>v.voter_name)).size} votantes</div>`+rows.map(x=>`<details class="card"><summary>${esc(pn(x.p.id))} <span class="sc">prom. ${x.avg.toFixed(1)} · ${x.vs.length} votos</span></summary>`+x.vs.slice().sort((a,b)=>b.total-a.total).map(v=>`<div class="row"><span>${esc(v.voter_name)}<br><span class="mut">${esc(sc(v))}</span></span><span class="sc">${esc(v.total)}</span></div>`).join('')+`</details>`).join('');
+  }else if(tab==='q'){
+    const names=[...new Set(D.v.map(v=>v.voter_name))].sort((a,b)=>a.localeCompare(b,'es'));
+    h=names.map(n=>{const vs=D.v.filter(v=>v.voter_name===n).sort((a,b)=>b.total-a.total);return `<details class="card"><summary>${esc(n)} <span class="mut">${vs.length} votos</span></summary>`+vs.map(v=>`<div class="row"><span>${esc(pn(v.participant_id))}<br><span class="mut">${esc(sc(v))}</span></span><span class="sc">${esc(v.total)}</span></div>`).join('')+`</details>`}).join('');
+  }else if(tab==='c'){
+    const f=window._cf||'';
+    h=`<select id="cf"><option value="">Todos los participantes (${D.c.length})</option>`+D.p.map(p=>`<option value="${p.id}" ${String(p.id)===f?'selected':''}>${esc(pn(p.id))}</option>`).join('')+`</select><div class="card">`+D.c.filter(c=>!f||String(c.participant_id)===f).map(c=>`<div class="cm"><b>${esc(c.voter_name)}</b> → ${esc(pn(c.participant_id))} <span class="mut">${fmt(c.created_at)}</span><br>${esc(c.text)}</div>`).join('')+`</div>`;
+  }else{
+    h=D.p.map(p=>{const m={};D.r.filter(r=>r.participant_id===p.id).forEach(r=>m[r.emoji]=(m[r.emoji]||0)+1);const e=Object.entries(m).sort((a,b)=>b[1]-a[1]);const t=e.reduce((a,x)=>a+x[1],0);return {p,e,t}}).sort((a,b)=>b.t-a.t).map(x=>`<div class="card"><b>${esc(pn(x.p.id))}</b> <span class="sc">${x.t} reacciones</span><br>${x.e.map(([k,n])=>`${esc(k)} ${n}`).join(' &nbsp; ')}</div>`).join('');
+  }
+  el.innerHTML=h;
+  const cf=document.getElementById('cf');if(cf)cf.onchange=()=>{window._cf=cf.value;render()};
+}
+</script></body></html>
